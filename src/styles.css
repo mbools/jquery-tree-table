@@ -1,0 +1,7 @@
+.jtt-open::after {
+    content: "+"
+}
+
+.jtt-closed::after {
+    content: "-"
+}

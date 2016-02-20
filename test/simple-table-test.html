@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Table</title>
+    <link rel="stylesheet" href="../node_modules/mocha/mocha.css">
+</head>
+<body>
+<table class="treetable">
+    <thead>
+    <tr>
+        <th colspan="2" data-jtt-sort-order="desc">Tree</th>
+        <th>Data</th>
+    </tr>
+    <tr>
+        <th data-jtt-sort-order="asc" data-jtt-tree></th>
+        <th></th>
+        <th data-jtt-sort-order="desc"></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr data-jtt-fixed-parent="A">
+        <td>item 1</td>
+        <td>item 1</td>
+        <td>data 1</td>
+    </tr>
+    <tr data-jtt-id="A">
+        <td>item 1</td>
+        <td>item 1</td>
+        <td>data 1</td>
+    </tr>
+    <tr>
+        <td>item 1</td>
+        <td>item 2</td>
+        <td>data 2</td>
+    </tr>
+    <tr data-jtt-fixed-parent="B">
+        <td>item 1</td>
+        <td>item 2</td>
+        <td>data 2</td>
+    </tr>
+    <tr data-jtt-id="B" data-jtt-fixed-parent="A">
+        <td>item 1</td>
+        <td>item 2</td>
+        <td>data 2</td>
+    </tr>
+    <tr>
+        <td>item 1</td>
+        <td>item 2</td>
+        <td>data 2</td>
+    </tr>
+    <tr>
+        <td>item 1</td>
+        <td>item 2</td>
+        <td>data 2</td>
+    </tr>
+    <tr data-jtt-parent="/">
+        <td>item 1</td>
+        <td>item 3</td>
+        <td>data 3</td>
+    </tr>
+    </tbody>
+</table>
+
+<div id="mocha"></div>
+<script src="../node_modules/mocha/mocha.js"></script>
+<script src="../node_modules/chai/chai.js"></script>
+<script>
+    mocha.ui('bdd');
+    mocha.reporter('html');
+    var expect = chai.expect;
+    var assert = chai.assert;
+</script>
+
+
+<script src="../node_modules/jquery/dist/jquery.min.js"></script>
+<script src="../lib/jquery-ui-widget.1.11.4.min.js"></script>
+<script src="../build/jquery-tree-table.js"></script>
+
+<script>
+    mocha.run();
+</script>
+
+</body>
+</html>
