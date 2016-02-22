@@ -13,6 +13,8 @@
         const DEFAULT = {
             SORT_ORDER: 'asc',
             SORT_TYPE: 'alpha',
+            OPENGLYPH: '&#x25BE;',
+            CLOSEDGLYPH: '&#x25B8;'
         };
 
         $(document).ready(function () {
@@ -27,6 +29,8 @@
                 insertOrder: false, // Whether to treat undecorate rows according to their position
                 forceTreeConstraints: false,
                 showLines: true,    // Whether to draw connecting lines on tree
+                nodeOpenGlyph: DEFAULT.OPENGLYPH,
+                nodeClosedGlyph: DEFAULT.CLOSEDGLYPH,
             },
 
             _columnSettings: [],
@@ -251,14 +255,16 @@
                         connector = $('<div class="jtt-node-offset"><div class="jtt-connector"></div></div>');
                         connector.css('margin-left', `${depth * indent}px`)
 
-                        let control = $('<span class="jtt-control"></span>');
+                        let control = $(`<a link="#" class="jtt-control">${(node.open) ? this.options.nodeOpenGlyph : this.options.nodeClosedGlyph}</a>`);
                         if (node.children.length) {
                             control
                                 .addClass(`jtt-${(node.open) ? 'open' : 'closed'}`)
                                 .on('click', function (evt) {
                                     let _self = node;
                                     self._toggleNode(_self);
-                                    $(evt.currentTarget).toggleClass("jtt-open jtt-closed");
+                                    $(evt.currentTarget)
+                                        .toggleClass("jtt-open jtt-closed")
+                                        .html((_self.open) ? self.options.nodeOpenGlyph : self.options.nodeClosedGlyph);
                                 });
                             connector.append(control);
                         }

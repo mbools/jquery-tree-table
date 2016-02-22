@@ -1,11 +1,4 @@
-.jtt-open::after {
-    cursor: pointer;
-    content: "\25BE";
-}
-
-.jtt-closed::after {
-    cursor: pointer;
-    content: "\25B8";
+.jtt-open, .jtt-closed {
 }
 
 
@@ -16,8 +9,10 @@
 
 .jtt-tree-node .jtt-control {
     display: inline-block;
+    position: relative;
+    cursor: pointer;
     padding-left: 3px;
-    width: 1em;
+    width: 0.6em;
     margin-left: -0.6em;
 }
 
