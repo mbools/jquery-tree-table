@@ -61,6 +61,16 @@ module.exports = function (grunt) {
                         dest: 'dist/'
                     }
                 ]
+            },
+            css: {
+                files: [
+                    {
+                        expand: true,
+                        cwd: 'src/',
+                        src: ['*.css'],
+                        dest: 'dist/'
+                    }
+                ]
             }
         }
     })
@@ -72,6 +82,6 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-mocha-test');
 
 
-    grunt.registerTask('test', ['babel']); // TODO Automate running test in browser
-    grunt.registerTask('default', ['babel', 'concat', 'uglify', 'copy:lib']);
+    grunt.registerTask('test', ['babel', 'copy:css']); // TODO Automate running test in browser
+    grunt.registerTask('default', ['babel', 'concat', 'uglify', 'copy:lib', 'copy:css']);
 }

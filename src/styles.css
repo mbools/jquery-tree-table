@@ -1,7 +1,50 @@
 .jtt-open::after {
-    content: "+"
+    cursor: pointer;
+    content: "\25BE";
 }
 
 .jtt-closed::after {
-    content: "-"
+    cursor: pointer;
+    content: "\25B8";
 }
+
+
+.jtt-tree-node {
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+.jtt-tree-node .jtt-control {
+    display: inline-block;
+    padding-left: 3px;
+    width: 1em;
+    margin-left: -0.6em;
+}
+
+.jtt-tree-node .jtt-node-offset {
+    display: inline-block;
+    width: 1.2em;
+}
+
+.jtt-tree-node .jtt-connector {
+    display: inline-block;
+    width: 100%;
+    margin-bottom: 5px;
+}
+
+.jtt-tree-node .jtt-connector.jtt-show-lines {
+    border-bottom: thin solid grey;
+    border-left: thin solid grey;
+}
+
+.jtt-tree-node .jtt-entry {
+    vertical-align: text-bottom;
+    padding-right:30px;
+    width:100%;
+    margin-left: 5px;
+    display: inline-block;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow-x: hidden;
+}
+
