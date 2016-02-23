@@ -1,5 +1,5 @@
 {
-  "name": "js-tree-table",
+  "name": "jquery-tree-table",
   "version": "0.0.0",
   "description": "Data driven table with (optionally) one column represented as a tree",
   "main": "index.js",
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/mbools/js-tree-table.git"
+    "url": "https://github.com/mbools/jquery-tree-table.git"
   },
   "keywords": [
     "tree",
@@ -18,7 +18,7 @@
   "author": "Mark Bools",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/mbools/js-tree-table/issues"
+    "url": "https://github.com/mbools/jquery-tree-table/issues"
   },
   "dependencies": {
   },
