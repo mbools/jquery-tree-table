@@ -13,8 +13,9 @@
         const DEFAULT = {
             SORT_ORDER: 'asc',
             SORT_TYPE: 'alpha',
-            OPENGLYPH: '&#x25BE;',
-            CLOSEDGLYPH: '&#x25B8;'
+            OPENGLYPH: 'jtt-open',
+            CLOSEDGLYPH: 'jtt-closed',
+            INDENT: 15
         };
 
         $(document).ready(function () {
@@ -27,10 +28,11 @@
             options: {
                 active: false,  // Whether to use DOM observer
                 insertOrder: false, // Whether to treat undecorate rows according to their position
-                forceTreeConstraints: false,
+                forceTreeConstraints: false, // Whether to impose tree contrainsts even if no jtt-tree column specified
                 showLines: true,    // Whether to draw connecting lines on tree
                 nodeOpenGlyph: DEFAULT.OPENGLYPH,
                 nodeClosedGlyph: DEFAULT.CLOSEDGLYPH,
+                indent: DEFAULT.INDENT,
             },
 
             _columnSettings: [],
@@ -65,6 +67,11 @@
 
                 this._redecorate();
 
+            },
+
+            _shiftErrorsToEnd() {
+                let errors = $('.jtt-error');
+                errors.remove().appendTo(this.element);
             },
 
             _updateOptions() {
@@ -137,6 +144,7 @@
                     let rowid = $row.data('jtt-id');
                     if (rowid && nodes[rowid]) {
                         console.log(`jquery-tree-table: Duplicate jtt-id (${rowid}) in table at row ${rowi}. Ignored.`);
+                        $row.addClass('jtt-error');
                     }
                     else {
                         let parent = $row.data('jtt-fixed-parent') || $row.data('jtt-parent');
@@ -192,15 +200,6 @@
                 });
             },
 
-            _findNode(node, nodeId) {
-                if (node.id === nodeId) {
-                    return node;
-                }
-                if (node.children) {
-                    return node.children.find(this._findNode);
-                }
-                return undefined;
-            },
 
             // Attempt to organise the table rows such that they will render consistent with constraints
             _reflowTable() {
@@ -218,10 +217,20 @@
                     this.element.append(node.$row);
                 });
 
+
+                this._shiftErrorsToEnd();
+
                 // Replace in the DOM...
 //            parent.element.append(table);
             },
 
+            /**
+             * Simply depth first tree walker
+             * @param node
+             * @param cb
+             * @param depth
+             * @private
+             */
             _treeWalk(node, cb, depth = 0) {
                 let continuation = true;
                 if (node.$row) {
@@ -237,10 +246,10 @@
                 }
             },
 
-            // Decorate the table consistent with setting
+            // Decorate the table consistent with settings
             _redecorate() {
                 let self = this;
-                const indent = 15;
+                let indent = this.options.indent;
                 let treeCol = this._treeColumn();
                 if (treeCol === 0) return; // No tree to decorate
 
@@ -248,38 +257,43 @@
                     let col = node.$row.find('td.jtt-tree-node');
                     if (col.length === 0) { // Decorate for the first time...
                         // TODO This currently assumes all columns in a row have no colspan!
-                        let connector;
-                        col = node.$row.find(`td:nth-of-type(${treeCol - 1})`);
-                        col.addClass('jtt-tree-node');
-                        col.wrapInner('<div class="jtt-entry"></div>');
-                        connector = $('<div class="jtt-node-offset"><div class="jtt-connector"></div></div>');
-                        connector.css('margin-left', `${depth * indent}px`)
+                        let connector = $(`<div class="jtt-node-offset" style="margin-left: ${depth * indent}px"><div class="jtt-connector"></div></div>`);
 
-                        let control = $(`<a link="#" class="jtt-control">${(node.open) ? this.options.nodeOpenGlyph : this.options.nodeClosedGlyph}</a>`);
+                        col = node.$row.find(`td:nth-of-type(${treeCol - 1})`)
+                            .addClass('jtt-tree-node')
+                            .wrapInner('<div class="jtt-entry"></div>')
+                            .prepend(connector);
+
+                        let control = $(`<a link="#" class="jtt-control"><span></span></a>`);
                         if (node.children.length) {
                             control
-                                .addClass(`jtt-${(node.open) ? 'open' : 'closed'}`)
                                 .on('click', function (evt) {
                                     let _self = node;
                                     self._toggleNode(_self);
                                     $(evt.currentTarget)
-                                        .toggleClass("jtt-open jtt-closed")
-                                        .html((_self.open) ? self.options.nodeOpenGlyph : self.options.nodeClosedGlyph);
-                                });
+                                        .find('span')
+                                        .first()
+                                        .toggleClass(self.options.nodeOpenGlyph + " " + self.options.nodeClosedGlyph);
+                                })
+                                .find('span')
+                                .first()
+                                .addClass((node.open) ? self.options.nodeOpenGlyph : self.options.nodeClosedGlyph);
                             connector.append(control);
                         }
-
-                        col.prepend(connector);
                     }
 
                     if (this.options.showLines && node.parent && node.parent !== '/') {
-                        let parentPos = col.closest('tbody').find(`tr[data-jtt-id="${node.parent}"] td:nth-of-type(${treeCol - 1})`).offset().top;
-                        let lineHeight = col.offset().top - parentPos - 5;
+                        let parentPos = col
+                            .closest('tbody')
+                            .find(`tr[data-jtt-id="${node.parent}"] td:nth-of-type(${treeCol - 1})`)
+                            .offset()
+                            .top;
+                        let connectorHeight = col.offset().top - parentPos - 5;
 
                         node.$row.find('div.jtt-connector')
                             .addClass('jtt-show-lines')
-                            .css('height', `${lineHeight}px`)
-                            .css('margin-top', `-${lineHeight}px`)
+                            .css('height', `${connectorHeight}px`)
+                            .css('margin-top', `-${connectorHeight}px`)
                     }
                     else {
                         node.$row.find('div.jtt-connector')
@@ -290,7 +304,9 @@
 
             _toggleNode(node) {
                 let numChildren = node.children.length;
+
                 node.open = !node.open;
+
                 for (let i = 0; i < numChildren; i++) {
                     this._treeWalk(node.children[i], (child) => {
                         if (child.open) {
@@ -301,6 +317,7 @@
                         }
                     });
                 }
+
                 this._redecorate();
             },
 
@@ -309,13 +326,7 @@
             {
 
             }
-            ,
 
-// Check whether the table is correctly structured
-            _checkConstraints()
-            {
-                return {violated: false}; // TODO real work
-            }
         })
         ;
 
