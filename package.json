@@ -21,7 +21,6 @@
     "url": "https://github.com/mbools/js-tree-table/issues"
   },
   "dependencies": {
-    "jquery": "~2.2.0"
   },
   "devDependencies": {
     "express": "~4.13.4",
