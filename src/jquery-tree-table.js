@@ -150,7 +150,7 @@
                     let parent = $row.data('jtt-fixed-parent') || $row.data('jtt-parent');
                     if (!parent) {
                         let $lastParentedNode = $row.prevAll('[data-jtt-parent]').last();
-                        if ($lastParentedNode) {
+                        if ($lastParentedNode.length) {
                             parent = $lastParentedNode.data('jtt-parent');
                         }
                         else {
