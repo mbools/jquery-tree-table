@@ -10,6 +10,29 @@
 (function ($) {
     "use strict";
 
+    const ATTR = {
+        // Table attributes...
+        active: 'data-jtt-active',
+        insertOrder: 'data-jtt-insert-order',
+        forceTreeConstraints: 'data-jtt-force-tree-constraints',
+        indent: 'data-jtt-indent',
+        showLines: 'data-jtt-draw-lines',
+        nodeOpenGlyph: 'data-jtt-open-glyph',
+        nodeClosedGlyph: 'data-jtt-closed-glyph',
+
+        // Column attributes...
+        sort: 'data-jtt-sort',
+        sortOrder: 'data-jtt-sort-order',
+        sortType: 'data-jtt-sort-type',
+        tree: 'data-jtt-tree',
+
+        // Row attributes...
+        id: 'data-jtt-id',
+        parent: 'data-jtt-parent',
+        fixedParent: 'data-jtt-fixed-parent',
+        limitParent: 'data-jtt-limit-parent',
+    };
+
     const DEFAULT = {
         SORT_ORDER: 'asc',
         SORT_TYPE: 'alpha',
@@ -33,6 +56,10 @@
             nodeOpenGlyph: DEFAULT.OPENGLYPH,
             nodeClosedGlyph: DEFAULT.CLOSEDGLYPH,
             indent: DEFAULT.INDENT,
+            console: {
+                errors: false,    // Whether to log error messages to the console
+                debug: true,   // Whether to log debug messages to the console
+            },
         },
 
         _columnSettings: [],
@@ -42,8 +69,131 @@
             if (!this.element.hasClass("treetable")) {
                 this.element.addClass("treetable");
             }
+            if (this.element.attr(ATTR.active) !== undefined) {
+                this._active(true);
+            }
 
             this._update();
+        },
+
+
+        ///////////////// API
+
+        //// Table level attru=ibute controls
+
+        active(state) {
+            if (state !== undefined) {
+                this._active(state);
+            }
+            return this.options.active;
+        },
+
+        forceTreeConstraints(state) {
+            if (state !== undefined) {
+                this._forceTreeConstraints(state);
+            }
+            return this.options.forceTreeConstraints = state;
+        },
+
+        showLines(state, immediate) {
+            if (state !== undefined) {
+                this.options.showLines = state;
+                if (this.element.attr(ATTR.showLines) && !state) {
+                    this.element.removeAttr(ATTR.showLines);
+                }
+                else {
+                    this.element.attr(ATTR.showLines, "");
+                }
+                if (immediate && !this.options.active) this._redecorate();
+            }
+            return this.options.showLines;
+        },
+
+
+        indent(indent, immediate) {
+            this.options.indent = indent;
+            this.element.attr(ATTR.indent, indent);
+            if (immediate && !this.options.active) this._redecorate();
+        },
+
+        nodeOpenGlyph(classes, immediate) {
+            this.options.nodeOpenGlyph = classes;
+            this.element.attr(ATTR.nodeOpenGlyph, classes);
+            if (immediate && !this.options.active) this._redecorate();
+        },
+
+
+        nodeClosedGlyph(classes, immediate) {
+            this.options.nodeClosedGlyph = classes;
+            this.element.attr(ATTR.nodeClosedGlyph, classes);
+            if (immediate && !this.options.active) this._redecorate();
+        },
+
+        redecorate() {
+            this._redecorate();
+        },
+
+        update() {
+            this._update();
+        },
+
+
+        _toggleAttr(attr, state) {
+            let newState = state || !this.element.attr(attr);
+            if (newState) {
+                this.element.attr(attr, "");
+            }
+            else {
+                this.element.removeAttr(attr);
+            }
+        },
+
+
+        _active(state) {
+            let self = this;
+            this._observers = this._observers || {};
+            if (state) {
+                if (self._observers.tbody === undefined) {
+                    self._observers.tbody = new MutationObserver(function (mutations) {
+                        // Crude implementation. May require improvement if performance becomes an issue
+                        self._update();
+                    });
+                }
+                if (self._observers.thead === undefined) {
+                    self._observers.thead = new MutationObserver(function (mutations) {
+                        // Crude implementation. May require improvement if performance becomes an issue
+                        self._update();
+                    });
+                }
+                //let head = this.element.find('thead');
+                //let headel = head.get();
+                //let body = this.element.find('tbody');
+                //let bodyel = body.get();
+                self.element.find('thead td, thead th').each(function () {
+                    self._observers.thead.observe(this, {attributes: true});
+                });
+                self._bodyObserver(true);
+            }
+            else {
+                self._bodyObserver(false);
+                if (self._observers.thead !== undefined) {
+                    self._observers.thead.disconnect();
+                }
+            }
+            self.options.active = state;
+        },
+
+        _bodyObserver(state) {
+            if (state) {
+                let result = this._observers.tbody.observe(this.element.find('tbody').get()[0], {childList: true, subtree: true, attributes: true});
+                console.log("OBSERVER ON: " + result);
+            }
+            else {
+                if (this._observers.tbody !== undefined) {
+                    this._observers.tbody.disconnect();
+                    console.log("OBSERVER OFF");
+                }
+            }
         },
 
         _setOption(key, value) {
@@ -57,6 +207,8 @@
 
         // General update of widget...
         _update() {
+            this._bodyObserver(false);  // Suspend while we mess with the tbody
+
             this._updateOptions();
             this._updateColSettings();
             this._buildTree();
@@ -67,6 +219,10 @@
 
             this._redecorate();
 
+            if (this.options.active) {
+                this._bodyObserver(true);
+            }
+
         },
 
         _shiftErrorsToEnd() {
@@ -75,9 +231,10 @@
         },
 
         _updateOptions() {
-            this.options.active = this.options.active || this.element.attr('data-jtt-active');
-            this.options.insertOrder = this.options.insertOrder || this.element.attr('data-jtt-insert-order');
-            this.options.forceTreeConstraints = this.options.forceTreeConstraints || this.element.attr('data-jtt-force-tree-constraints');
+            this.options.active = this.options.active || this.element.attr(ATTR.active);
+            this.options.indent = this.options.indent || this.element.attr(ATTR.indent);
+            this.options.insertOrder = this.options.insertOrder || this.element.attr(ATTR.insertOrder);
+            this.options.forceTreeConstraints = this.options.forceTreeConstraints || this.element.attr(ATTR.forceTreeConstraints);
         },
 
 
@@ -90,10 +247,10 @@
                     let $colc = $(element);
                     let colw = +$colc.attr('colspan') || 1;
                     let colset = {
-                        tree: $colc.data('jtt-tree'),
-                        sort: $colc.data('jtt-sort'),
-                        sortOrder: $colc.data('jtt-sort-order'),
-                        sortType: $colc.data('jtt-sort-type'),
+                        tree: $colc.attr(ATTR.tree),
+                        sort: $colc.attr(ATTR.sort),
+                        sortOrder: $colc.attr(ATTR.sortOrder),
+                        sortType: $colc.attr(ATTR.sortType),
                     };
                     for (let i = 0; i < colw; i++) {
                         if (rowi === 0) {
@@ -143,15 +300,15 @@
                 let $row = $(rowe);
                 let rowid = $row.data('jtt-id');
                 if (rowid && nodes[rowid]) {
-                    console.log(`jquery-tree-table: Duplicate jtt-id (${rowid}) in table at row ${rowi}. Ignored.`);
+                    if (self.options.console.errors) console.log(`jquery-tree-table: Duplicate jtt-id (${rowid}) in table at row ${rowi}. Ignored.`);
                     $row.addClass('jtt-error');
                 }
                 else {
-                    let parent = $row.data('jtt-fixed-parent') || $row.data('jtt-parent');
+                    let parent = $row.attr(ATTR.fixedParent) || $row.attr(ATTR.parent);
                     if (!parent) {
-                        let $lastParentedNode = $row.prevAll('[data-jtt-parent]').last();
+                        let $lastParentedNode = $row.prevAll('[' + ATTR.parent + ']').last();
                         if ($lastParentedNode.length) {
-                            parent = $lastParentedNode.data('jtt-parent');
+                            parent = $lastParentedNode.attr(ATTR.parent);
                         }
                         else {
                             parent = '/';
@@ -159,14 +316,14 @@
                     }
 
                     if (parent === rowid) {
-                        console.log(`jQuery-tree-table: ${rowid} defined with itself as parent. Ignored, setting parent to root`);
+                        if (self.options.console.errors) console.log(`jQuery-tree-table: ${rowid} defined with itself as parent. Ignored, setting parent to root`);
                         parent = '/';
                         // TODO This should really detect any circular definitions and break them
                     }
 
                     if (!rowid) {
                         rowid = self._guid();
-                        $row.attr('data-jtt-id', rowid);
+                        $row.attr(ATTR.id, rowid);
                     }
 
                     nodes[rowid] = {
@@ -193,6 +350,7 @@
         },
 
 
+        // Kudos broofa http://stackoverflow.com/a/2117523
         _guid() {
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
                 var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
@@ -212,7 +370,6 @@
             }
 
             this._treeWalk(this._tree, (node) => {
-                let rows = this.element.find('tbody tr');
                 node.$row.detach();
                 this.element.append(node.$row);
             });
@@ -251,15 +408,26 @@
             let self = this;
             let indent = this.options.indent;
             let treeCol = this._treeColumn();
+
+            let currentTNode = this._tree.children[0].$row.children('td.jtt-tree-node').index();
+            if (self.options.console.debug) console.log(`currentTNode is ${currentTNode} treeCol (with offset) is ${treeCol - 2}`)
+            if (currentTNode >= 0 && currentTNode !== treeCol - 2) {
+                // Tree has moved columns, been removed, or is not specified, so wipe out any old tree decoration
+                let currNodes = this.element.find('.jtt-tree-node');
+                currNodes.find('.jtt-node-offset').remove();
+                currNodes.find('.jtt-entry').contents().unwrap();
+                currNodes.removeClass('jtt-tree-node');
+            }
+
             if (treeCol === 0) return; // No tree to decorate
 
             this._treeWalk(this._tree, (node, depth) => {
-                let col = node.$row.find('td.jtt-tree-node');
+                let col = node.$row.children('td.jtt-tree-node');
                 if (col.length === 0) { // Decorate for the first time...
                     // TODO This currently assumes all columns in a row have no colspan!
                     let connector = $(`<div class="jtt-node-offset" style="margin-left: ${depth * indent}px"><div class="jtt-connector"></div></div>`);
 
-                    col = node.$row.find(`td:nth-of-type(${treeCol - 1})`)
+                    col = node.$row.children(`td:nth-of-type(${treeCol - 1})`)
                         .addClass('jtt-tree-node')
                         .wrapInner('<div class="jtt-entry"></div>')
                         .prepend(connector);
@@ -283,6 +451,13 @@
                             .first()
                             .addClass((node.open) ? self.options.nodeOpenGlyph : self.options.nodeClosedGlyph);
                         connector.append(control);
+                    }
+                }
+                else { // Modify existing decoration
+                    col= node.$row.find("div.jtt-node-offset")
+                        .css('margin-left', `${depth * indent}px`);
+                    if (!node.children.length) {
+                        node.$row.find("a.jtt-control").remove();
                     }
                 }
 
