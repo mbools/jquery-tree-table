@@ -33,12 +33,18 @@
         limitParent: 'data-jtt-limit-parent',
     };
 
+    const CLASSES = {
+        MARKER: 'treetable'
+    };
+
     const DEFAULT = {
         SORT_ORDER: 'asc',
         SORT_TYPE: 'alpha',
         OPENGLYPH: 'jtt-open',      // Class(es) for inclusion of open node glyph
         CLOSEDGLYPH: 'jtt-closed',  // Class(es) for inclusion of closed node glyph
         INDENT: 15,                 // Default indentation on each tree level, in px
+        ROOTPATH: '/',
+        INSERTORDER: {ASC: 'asc', DESC: 'desc'}
     };
 
     $(document).ready(function () {
@@ -64,12 +70,14 @@
 
         _columnSettings: [],
 
+        _observers: {},     // DOM observers (when table is active)
+
         // Widget constructor...
         _create() {
-            if (!this.element.hasClass("treetable")) {
-                this.element.addClass("treetable");
+            if (!this.element.hasClass(CLASSES.MARKER)) {
+                this.element.addClass(CLASSES.MARKER);
             }
-            if (this.element.attr(ATTR.active) !== undefined) {
+            if (this.element.attr(ATTR.active) !== undefined || this.options.active) {
                 this._active(true);
             }
 
@@ -77,10 +85,15 @@
         },
 
 
-        ///////////////// API
+        ///////////////// PUBLIC API
 
-        //// Table level attru=ibute controls
+        //// Table level attribute controls
 
+        /**
+         * Make the table active/inactive, when no state supplied simply returns current state
+         * @param state {boolean} true = active, false =  inactive
+         * @returns {boolean} The current state
+         */
         active(state) {
             if (state !== undefined) {
                 this._active(state);
@@ -88,14 +101,30 @@
             return this.options.active;
         },
 
+        /**
+         * Set forceTreeConstraints. When no state supplied simply returns current state
+         * When forceTreeConstraints is true table rows are ordered by and subbject too all
+         * the tree constraints (e.g. fixed/limit parents, child-parent relationships) even when
+         * no jtt-tree column is identified.
+         * @param state {boolean}
+         * @returns {boolean}
+         */
         forceTreeConstraints(state) {
             if (state !== undefined) {
-                this._forceTreeConstraints(state);
+                this._forceTreeConstraints = state;
             }
-            return this.options.forceTreeConstraints = state;
+            return this.options.forceTreeConstraints;
         },
 
-        showLines(state, immediate) {
+        /**
+         *
+         * @param state
+         * @param immediate {boolean} If true then table is redrawn immediately, when false (the default)
+         *                              redraw deferred until either next operation calls for redraw OR user
+         *                              explicitly calls redecorate()
+         * @returns {boolean}
+         */
+        showLines(state, immediate = false) {
             if (state !== undefined) {
                 this.options.showLines = state;
                 if (this.element.attr(ATTR.showLines) && !state) {
@@ -110,108 +139,73 @@
         },
 
 
+        /**
+         * Set the indentation applied to each node level
+         * @param indent {int} Indent applied to each node level in px
+         * @param immediate {boolean} Whether tree is redrawn immediately
+         */
         indent(indent, immediate) {
             this.options.indent = indent;
             this.element.attr(ATTR.indent, indent);
             if (immediate && !this.options.active) this._redecorate();
         },
 
+        /**
+         * Set classes to be applied to span representing openGlyph on node
+         * @param classes {string} classes to be applied to span representing openGlyph on a node
+         * @param immediate {boolean} Whether to redraw the table immediately.
+         */
         nodeOpenGlyph(classes, immediate) {
-            this.options.nodeOpenGlyph = classes;
-            this.element.attr(ATTR.nodeOpenGlyph, classes);
-            if (immediate && !this.options.active) this._redecorate();
+            if (typeof classes === 'string') {
+                this.options.nodeOpenGlyph = classes;
+                this.element.attr(ATTR.nodeOpenGlyph, classes);
+                if (immediate && !this.options.active) this._redecorate();
+            }
         },
 
 
+        /**
+         * Set classes to be applied to span representing closedGlyph on node
+         * @param classes {string} classes to be applied to span representing closedGlyph on a node
+         * @param immediate {boolean} Whether to redraw the table immediately.
+         */
         nodeClosedGlyph(classes, immediate) {
-            this.options.nodeClosedGlyph = classes;
-            this.element.attr(ATTR.nodeClosedGlyph, classes);
-            if (immediate && !this.options.active) this._redecorate();
+            if (typeof classes === 'string') {
+                this.options.nodeClosedGlyph = classes;
+                this.element.attr(ATTR.nodeClosedGlyph, classes);
+                if (immediate && !this.options.active) this._redecorate();
+            }
         },
 
+        /**
+         * Redecorate the tree, redrawing all connecting lines, icons, etc.
+         */
         redecorate() {
             this._redecorate();
         },
 
+        /**
+         * Update the tree. This applies constraints set, reorders rows, and then redecorates the tree.
+         */
         update() {
             this._update();
         },
 
 
-        _toggleAttr(attr, state) {
-            let newState = state || !this.element.attr(attr);
-            if (newState) {
-                this.element.attr(attr, "");
-            }
-            else {
-                this.element.removeAttr(attr);
-            }
-        },
+        ///////////////////// PRIVATE
 
-
-        _active(state) {
-            let self = this;
-            this._observers = this._observers || {};
-            if (state) {
-                if (self._observers.tbody === undefined) {
-                    self._observers.tbody = new MutationObserver(function (mutations) {
-                        // Crude implementation. May require improvement if performance becomes an issue
-                        self._update();
-                    });
-                }
-                if (self._observers.thead === undefined) {
-                    self._observers.thead = new MutationObserver(function (mutations) {
-                        // Crude implementation. May require improvement if performance becomes an issue
-                        self._update();
-                    });
-                }
-                //let head = this.element.find('thead');
-                //let headel = head.get();
-                //let body = this.element.find('tbody');
-                //let bodyel = body.get();
-                self.element.find('thead td, thead th').each(function () {
-                    self._observers.thead.observe(this, {attributes: true});
-                });
-                self._bodyObserver(true);
-            }
-            else {
-                self._bodyObserver(false);
-                if (self._observers.thead !== undefined) {
-                    self._observers.thead.disconnect();
-                }
-            }
-            self.options.active = state;
-        },
-
-        _bodyObserver(state) {
-            if (state) {
-                let result = this._observers.tbody.observe(this.element.find('tbody').get()[0], {childList: true, subtree: true, attributes: true});
-                console.log("OBSERVER ON: " + result);
-            }
-            else {
-                if (this._observers.tbody !== undefined) {
-                    this._observers.tbody.disconnect();
-                    console.log("OBSERVER OFF");
-                }
-            }
-        },
-
-        _setOption(key, value) {
-            // Validate...
-            this.options[key] = value; // Set
-            if (this.element.data[key] !== value) {
-                this.element.data[key] = value;
-            }
-            //Act...
-        },
-
-        // General update of widget...
+        /**
+         * Update the whole table applying all constraints, then redraw it.
+         * @private
+         */
         _update() {
-            this._bodyObserver(false);  // Suspend while we mess with the tbody
+            this._bodyObserverState(false);  // Suspend while we mess with the tbody
 
             this._updateOptions();
             this._updateColSettings();
+
             this._buildTree();
+            this._imposeTreeConstraints();
 
             this._sort();
 
@@ -220,24 +214,32 @@
             this._redecorate();
 
             if (this.options.active) {
-                this._bodyObserver(true);
+                this._bodyObserverState(true);
             }
 
         },
 
-        _shiftErrorsToEnd() {
-            let errors = $('.jtt-error');
-            errors.remove().appendTo(this.element);
-        },
-
+        /**
+         * Make the internal options match the DOM table attributes, supplying defaults from current option settings
+         * @private
+         */
         _updateOptions() {
-            this.options.active = this.options.active || this.element.attr(ATTR.active);
-            this.options.indent = this.options.indent || this.element.attr(ATTR.indent);
-            this.options.insertOrder = this.options.insertOrder || this.element.attr(ATTR.insertOrder);
-            this.options.forceTreeConstraints = this.options.forceTreeConstraints || this.element.attr(ATTR.forceTreeConstraints);
+            this.options.active = this.element.attr(ATTR.active) !== undefined ? true : this.options.active;
+
+            this.options.indent = +this.element.attr(ATTR.indent) || this.options.indent;
+
+            let insertOrderAttr = this.element.attr(ATTR.insertOrder);
+            if (DEFAULT.INSERTORDER.ASC === insertOrderAttr || DEFAULT.INSERTORDER.DESC === insertOrderAttr) {
+                this.options.insertOrder = insertOrderAttr;
+            }
+
+            this.options.forceTreeConstraints = this.element.attr(ATTR.forceTreeConstraints) !== undefined ? true : this.options.forceTreeConstraints;
         },
 
-
+        /**
+         * Update the internal column settings to take account of DOM settings
+         * @private
+         */
         _updateColSettings() {
             let self = this;
             $(self.element.find('thead tr').get().reverse()).each((rowi, rowe) => {
@@ -267,22 +269,7 @@
                     coli += colw;
                 });
             });
-            console.log(this._columnSettings);
-        },
-
-
-        _treeColumn() {
-            return this._columnSettings.findIndex((colset) => colset && colset.tree !== undefined) + 1;
-        },
-
-        /**
-         * Force jtt-parent to match any jtt-fixed-parent
-         * @private
-         */
-        _fixupParents() {
-            this.element.find('tbody tr[data-jtt-fixed-parent]').attr('data-jtt-parent', function () {
-                return this.getAttribute('data-jtt-fixed-parent')
-            });
+            if (this.options.console.debug) console.log("Current column settings: " + this._columnSettings);
         },
 
         /**
@@ -291,40 +278,49 @@
          */
         _buildTree(){
             let self = this;
-            let nodes = {'/': {id: '/', children: []}};
-            this._fixupParents();
+            let nodes = {};
+
+            nodes[DEFAULT.ROOTPATH] = {id: DEFAULT.ROOTPATH, children: []};
+
+//            this._fixupParents(); // Globlally set all jtt-parent to jtt-fixed-parent since there's no other possibility
 
             this._tree = {};
 
             self.element.find('tbody tr').each((rowi, rowe) => {
                 let $row = $(rowe);
-                let rowid = $row.data('jtt-id');
-                if (rowid && nodes[rowid]) {
+                let rowid = $row.attr(ATTR.id);
+
+                if (!rowid) {
+                    rowid = self._uuid();
+                    $row.attr(ATTR.id, rowid);
+                }
+
+                if (nodes[rowid]) {
                     if (self.options.console.errors) console.log(`jquery-tree-table: Duplicate jtt-id (${rowid}) in table at row ${rowi}. Ignored.`);
                     $row.addClass('jtt-error');
                 }
                 else {
-                    let parent = $row.attr(ATTR.fixedParent) || $row.attr(ATTR.parent);
+                    let parent = $row.attr(ATTR.fixedParent) || $row.attr(ATTR.parent) || $row.attr(ATTR.limitParent);
+
                     if (!parent) {
+                        // When no parent is specified the row's position is used to find it's closest
+                        // sibling with a parent OR the root node if all previous rows have no parent.
                         let $lastParentedNode = $row.prevAll('[' + ATTR.parent + ']').last();
                         if ($lastParentedNode.length) {
                             parent = $lastParentedNode.attr(ATTR.parent);
                         }
                         else {
-                            parent = '/';
+                            parent = DEFAULT.ROOTPATH;
                         }
                     }
 
                     if (parent === rowid) {
                         if (self.options.console.errors) console.log(`jQuery-tree-table: ${rowid} defined with itself as parent. Ignored, setting parent to root`);
-                        parent = '/';
-                        // TODO This should really detect any circular definitions and break them
+                        parent = DEFAULT.ROOTPATH;
+                        // TODO In tree validation should detect any circular definitions and break them
                     }
 
-                    if (!rowid) {
-                        rowid = self._guid();
-                        $row.attr(ATTR.id, rowid);
-                    }
+                    $row.attr(ATTR.parent, parent);
 
                     nodes[rowid] = {
                         id: rowid,
@@ -336,11 +332,11 @@
                 }
             });
 
-            self._tree = nodes['/'];
-            delete nodes['/'];
+            self._tree = nodes[DEFAULT.ROOTPATH];
+            delete nodes[DEFAULT.ROOTPATH];
 
             for (let node in nodes) {
-                if (nodes[node].parent !== '/') {
+                if (nodes[node].parent !== DEFAULT.ROOTPATH) {
                     nodes[nodes[node].parent].children.push(nodes[node]);
                 }
                 else {
@@ -349,17 +345,48 @@
             }
         },
 
+        /**
+         * Check the defined tree for constraint violations, enforce them by adjusting the tree struture as necessary
+         * @private
+         */
+        _imposeTreeConstraints() {
+            let self = this;
 
-        // Kudos broofa http://stackoverflow.com/a/2117523
-        _guid() {
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-                var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
+            self._treeWalk(self._tree, (node) => {
+                // Move node to parents according to limit-parent and fixed-parent constraints
+                let fixed_parent = node.$row.attr(ATTR.fixedParent);
+                if (fixed_parent) {
+                    node.$row.removeAttr(ATTR.limitParent); // Cannot apply when fixed parent specified
+
+                    if (node.parent != fixed_parent) {
+                        node.parent = fixed_parent;
+                        node.$row.attr(ATTR.parent, fixed_parent);
+                    }
+                }
+
+                // Move the node under limit parent if constraint not met
+                let limit_parent = node.$row.attr(ATTR.limitParent);
+                if (limit_parent !== undefined) {
+                    let ancestors = this._findAncestors(node);
+                    if (ancestors.indexOf(limit_parent) === -1) {
+                        node.parent = limit_parent;
+                        node.$row.attr(ATTR.parent, limit_parent);
+                    }
+                }
             });
+
         },
 
+        // Sort the table within set constraints
+        _sort()
+        {
 
-        // Attempt to organise the table rows such that they will render consistent with constraints
+        },
+
+        /**
+         * Reorder table rows to conform with ordered table structure.
+         * @private
+         */
         _reflowTable() {
             // Since we have no idea how large this table might be, let's work outside the DOM...
 //            let parent = this.element.parent();
@@ -379,28 +406,6 @@
 
             // Replace in the DOM...
 //            parent.element.append(table);
-        },
-
-        /**
-         * Simply depth first tree walker
-         * @param node
-         * @param cb
-         * @param depth
-         * @private
-         */
-        _treeWalk(node, cb, depth = 0) {
-            let continuation = true;
-            if (node.$row) {
-                continuation = cb(node, depth);
-                continuation = (continuation !== undefined && typeof continuation === 'boolean') ? continuation : true;
-            }
-
-            if (continuation) {
-                let numChildren = node.children.length;
-                for (let i = 0; i < numChildren; i++) {
-                    this._treeWalk(node.children[i], cb, depth + 1);
-                }
-            }
         },
 
         // Decorate the table consistent with settings
@@ -432,8 +437,8 @@
                         .wrapInner('<div class="jtt-entry"></div>')
                         .prepend(connector);
 
-                    let control = $(`<a link="#" class="jtt-control"><span></span></a>`);
                     if (node.children.length) {
+                        let control = $(`<a link="#" class="jtt-control"><span></span></a>`);
                         control
                             .on('click', function (evt) {
                                 let _self = node;
@@ -454,10 +459,33 @@
                     }
                 }
                 else { // Modify existing decoration
-                    col= node.$row.find("div.jtt-node-offset")
+                    col = node.$row.find("div.jtt-node-offset")
                         .css('margin-left', `${depth * indent}px`);
                     if (!node.children.length) {
                         node.$row.find("a.jtt-control").remove();
+                    }
+                    else {
+                        let control = $('.jtt-control');
+                        if (control.length === 0 && node.children.length !== 0) {
+                            control = $(`<a link="#" class="jtt-control"><span></span></a>`);
+                            control
+                                .on('click', function (evt) {
+                                    let _self = node;
+                                    self._toggleNode(_self);
+                                    $(evt.currentTarget)
+                                        .find('span')
+                                        .first()
+                                        // Note to maintainers, we don't use toggleClass because the nodeOpenGlyph and
+                                        // nodeClosedGlyph options may contain classes that persist
+                                        // (e.g. Bootstrap's convention 'glyphicon glyphiconX' vs 'glyphicon glyphiconY')
+                                        .removeClass((!node.open) ? self.options.nodeOpenGlyph : self.options.nodeClosedGlyph)
+                                        .addClass((node.open) ? self.options.nodeOpenGlyph : self.options.nodeClosedGlyph);
+                                })
+                                .find('span')
+                                .first()
+                                .addClass((node.open) ? self.options.nodeOpenGlyph : self.options.nodeClosedGlyph);
+                            col.append(control);
+                        }
                     }
                 }
 
@@ -481,6 +509,167 @@
             });
         },
 
+
+        ///////////////////// UTILITY
+
+        _toggleAttr(attr, state) {
+            let newState = state || !this.element.attr(attr);
+            if (newState) {
+                this.element.attr(attr, "");
+            }
+            else {
+                this.element.removeAttr(attr);
+            }
+        },
+
+
+        /**
+         * Make the table active/inactive
+         * @param state {boolean} true = active, false = inactive
+         * @private
+         */
+        _active(state) {
+            let self = this;
+
+            this._toggleAttr(ATTR.active, state);
+            self.options.active = state;
+
+            if (state) {
+                if (self._observers.tbody === undefined) {
+                    self._observers.tbody = new MutationObserver(function (mutations) {
+                        // Crude implementation. May require improvement if performance becomes an issue
+                        self._update();
+                    });
+                }
+                if (self._observers.thead === undefined) {
+                    self._observers.thead = new MutationObserver(function (mutations) {
+                        // Crude implementation. May require improvement if performance becomes an issue
+                        self._update();
+                    });
+                }
+
+                self.element.find('thead td, thead th').each(function () {
+                    self._observers.thead.observe(this, {attributes: true});
+                });
+                self._bodyObserverState(true);
+            }
+            else {
+                self._bodyObserverState(false);
+                if (self._observers.thead !== undefined) {
+                    self._observers.thead.disconnect();
+                }
+            }
+        },
+
+        /**
+         * Turm the table body observer (defined when table is marked 'active') on/off
+         * @param state {boolean} true = on, false = off
+         * @private
+         */
+        _bodyObserverState(state) {
+            if (this._observers.tbody !== undefined) {
+                if (state) {
+                    this._observers.tbody.observe(this.element.find('tbody').get()[0], {
+                        childList: true,
+                        subtree: true,
+                        attributes: true
+                    });
+                    if (this.options.console.debug) console.log("OBSERVER ON");
+                }
+                else {
+                    this._observers.tbody.disconnect();
+                    if (this.options.console.debug) console.log("OBSERVER OFF");
+                }
+            }
+        },
+
+        /**
+         * Any rows that violate table constraints (or simply don't fit the tree flow) are moved to the end of the table
+         * bu otherwise maintain their relative positions to one another.
+         * @private
+         */
+        _shiftErrorsToEnd() {
+            let errors = $('.jtt-error');
+            errors.remove().appendTo(this.element);
+        },
+
+        /**
+         * Find the column in the table that is to be displayed as a tree
+         * @returns {number} Column number of column to be treated as tree 1 is leftmost column in table
+         * @private
+         */
+        _treeColumn() {
+            return this._columnSettings.findIndex((colset) => colset && colset.tree !== undefined) + 1;
+        },
+
+        /**
+         * Force jtt-parent to match any jtt-fixed-parent
+         * @private
+         */
+        _fixupParents() {
+            this.element.find(`tbody tr[${ATTR.fixedParent}]`).attr(ATTR.parent, function () {
+                return this.getAttribute(ATTR.fixedParent);
+            });
+        },
+
+        /**
+         * Walk up the parent chain returning array of ancestors
+         * @param node {object} Node in tree
+         * @returns {Array} Array of tree nodes that are ancestors to node
+         * @private
+         */
+        _findAncestors(node) {
+            let ancestors = [];
+            let next_node = node;
+            while (next_node.parent !== undefined) {
+                ancestors.push(next_node.parent);
+                next_node = next_node.parent;
+            }
+            return ancestors;
+        },
+
+        /**
+         * UUID generator
+         *
+         * Kudos broofa http://stackoverflow.com/a/2117523
+         * @returns {string} An RFC4122 [https://www.ietf.org/rfc/rfc4122.txt] version 4 (random) UUID
+         * @private
+         */
+        _uuid() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        },
+
+        /**
+         * Simply depth first tree walker
+         * @param node {object}
+         * @param cb {function} callback for each node. Receives (node, depth). If cb returns false the _treeWalk the walk does not follow the nodes children
+         * @param depth {int} the level of the node in the tree (0 = root node)
+         * @private
+         */
+        _treeWalk(node, cb, depth = 0) {
+            let continuation = true;
+            if (node.$row) {
+                continuation = cb(node, depth);
+                continuation = (continuation !== undefined && typeof continuation === 'boolean') ? continuation : true;
+            }
+
+            if (continuation) {
+                let numChildren = node.children.length;
+                for (let i = 0; i < numChildren; i++) {
+                    this._treeWalk(node.children[i], cb, depth + 1);
+                }
+            }
+        },
+
+        /**
+         * Toggles the node and it's children display on/off
+         * Will honour any child nodes previous display state (so will not open previously closed nodes).
+         * @param node
+         * @private
+         */
         _toggleNode(node) {
             let numChildren = node.children.length;
 
@@ -499,12 +688,6 @@
 
             this._redecorate();
         },
-
-        // Sort the table within set constraints
-        _sort()
-        {
-
-        }
 
     });
 

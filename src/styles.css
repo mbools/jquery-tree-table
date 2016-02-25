@@ -11,6 +11,9 @@
     content: "\25B8"
 }
 
+a.jtt-control:hover {
+    text-decoration: none;
+}
 
 .jtt-tree-node {
     white-space: nowrap;
