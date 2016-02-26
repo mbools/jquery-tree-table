@@ -450,14 +450,20 @@
                     this._appendControlTo(node, connector);
                 }
 
+                // Add the connection line (hide it if show-lines false)...
                 if (this.options.showLines && node.parent && node.parent !== '/') {
-                    let parentControl = col
-                        .closest('tbody')
-                        .find(`tr[data-jtt-id="${node.parent}"] a.jtt-control span`);
-                    let parentPos = parentControl
-                        .offset()
-                        .top;
-                    let connectorHeight = col.offset().top - parentPos - (col.height() / 2);
+                    let closestParentedRow = node.$row
+                        .prevAll(`tr[data-jtt-parent="${node.parent}"]`)
+                        .first();
+                    if (closestParentedRow.length === 0) {
+                        closestParentedRow = node.$row.prev(`tr[data-jtt-id="${node.parent}"]`);
+                    }
+
+                    let parentConnector = closestParentedRow.find('div.jtt-connector');
+
+                    let parentPos = parentConnector.offset().top;
+
+                    let connectorHeight = col.offset().top + (col.find('div.jtt-node-offset').height()/2) - (parentPos + parentConnector.outerHeight(false) -1);
 
                     node.$row.find('div.jtt-connector')
                         .addClass('jtt-show-lines')

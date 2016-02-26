@@ -41,8 +41,8 @@ a.jtt-control:hover {
 }
 
 .jtt-tree-node .jtt-connector.jtt-show-lines {
-    border-bottom: thin solid grey;
-    border-left: thin solid grey;
+    border-bottom: thin dotted grey;
+    border-left: thin dotted grey;
 }
 
 .jtt-tree-node .jtt-entry {
