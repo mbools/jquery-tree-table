@@ -414,14 +414,15 @@
          */
         _redecorate() {
             let self = this;
-            let indent = this.options.indent;
-            let treeCol = this._treeColumn();
 
-            let currentTNode = this._tree.children[0].$row.children('td.jtt-tree-node').index();
+            let indent = self.options.indent;
+            let treeCol = self._treeColumn();
+
+            let currentTNode = self._tree.children[0].$row.children('td.jtt-tree-node').index();
             if (self.options.console.debug) console.log(`currentTNode is ${currentTNode} treeCol (with offset) is ${treeCol - 2}`)
             if (currentTNode >= 0 && currentTNode !== treeCol - 2) {
                 // Tree has moved columns, been removed, or is not specified, so wipe out any old tree decoration
-                let currNodes = this.element.find('.jtt-tree-node');
+                let currNodes = self.element.find('.jtt-tree-node');
                 currNodes.find('.jtt-node-offset').remove();
                 currNodes.find('.jtt-entry').contents().unwrap();
                 currNodes.removeClass('jtt-tree-node');
@@ -429,8 +430,12 @@
 
             if (treeCol === 0) return; // No tree to decorate
 
-            this._treeWalk(this._tree, (node, depth) => {
+            // Depth first walk down the tree (which will also be the row order as displayed
+            // making life much simpler for calculating connections etc.)...
+            self._treeWalk(self._tree, (node, depth) => {
                 let col = node.$row.children('td.jtt-tree-node');
+
+                // Establish the connector and controls...
                 let connector = col.find('div.jtt-node-offset');
                 if (col.length === 0) { // Decorate for the first time...
                     // TODO This currently assumes all columns in a row have no colspan!
@@ -443,15 +448,39 @@
 
                 }
 
+                // Add/remove node open/close control...
                 if (!node.children.length) {
                     node.$row.find("a.jtt-control").remove();
                 }
                 else {
-                    this._appendControlTo(node, connector);
+                    let control = connector.find('.jtt-control');
+                    if (control.length === 0) {
+                        control = $(`<a link="#" class="jtt-control"><span></span></a>`);
+                        control
+                            .on('click', function (evt) {
+                                let _self = node;
+                                self._toggleNode(_self);
+                                $(evt.currentTarget)
+                                    .find('span')
+                                    .first()
+                                    // Note to maintainers, we don't use toggleClass because the nodeOpenGlyph and
+                                    // nodeClosedGlyph options may contain classes that persist
+                                    // (e.g. Bootstrap's convention 'glyphicon glyphiconX' vs 'glyphicon glyphiconY')
+                                    .removeClass((!node.open) ? self.options.nodeOpenGlyph : self.options.nodeClosedGlyph)
+                                    .addClass((node.open) ? self.options.nodeOpenGlyph : self.options.nodeClosedGlyph);
+                            })
+                            .find('span')
+                            .first()
+                            .addClass((node.open) ? self.options.nodeOpenGlyph : self.options.nodeClosedGlyph);
+                        connector.append(control);
+                    }
                 }
 
+                // Note to maintainer: We do this calculation last because the controls added above could
+                //                     cause changes in the sizing of the node, which would FUBAR the
+                //                     calculations below.
                 // Add the connection line (hide it if show-lines false)...
-                if (this.options.showLines && node.parent && node.parent !== '/') {
+                if (self.options.showLines && node.parent && node.parent !== '/') {
                     let closestParentedRow = node.$row
                         .prevAll(`tr[data-jtt-parent="${node.parent}"]`)
                         .first();
@@ -487,37 +516,6 @@
             }
             else {
                 this.element.removeAttr(attr);
-            }
-        },
-
-        /**
-         * Add a controlhandle if none exists
-         * @param node
-         * @param connector
-         * @private
-         */
-        _appendControlTo(node, connector) {
-            let self = this;
-            let control = connector.find('.jtt-control');
-            if (control.length === 0) {
-                control = $(`<a link="#" class="jtt-control"><span></span></a>`);
-                control
-                    .on('click', function (evt) {
-                        let _self = node;
-                        self._toggleNode(_self);
-                        $(evt.currentTarget)
-                            .find('span')
-                            .first()
-                            // Note to maintainers, we don't use toggleClass because the nodeOpenGlyph and
-                            // nodeClosedGlyph options may contain classes that persist
-                            // (e.g. Bootstrap's convention 'glyphicon glyphiconX' vs 'glyphicon glyphiconY')
-                            .removeClass((!node.open) ? self.options.nodeOpenGlyph : self.options.nodeClosedGlyph)
-                            .addClass((node.open) ? self.options.nodeOpenGlyph : self.options.nodeClosedGlyph);
-                    })
-                    .find('span')
-                    .first()
-                    .addClass((node.open) ? self.options.nodeOpenGlyph : self.options.nodeClosedGlyph);
-                connector.append(control);
             }
         },
 
