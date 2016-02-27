@@ -1,14 +1,19 @@
+@error-bg-color: red;
+
+@control-open-icon: "\25BE";
+@control-closed-icon: "\25B8";
+
 
 .jtt-error {
-    background-color: red;
+    background-color: @error-bg-color;
 }
 
 .jtt-open:before {
-    content: "\25BE";
+    content: @control-open-icon;
 }
 
 .jtt-closed:before {
-    content: "\25B8"
+    content: @control-closed-icon;
 }
 
 a.jtt-control:hover {

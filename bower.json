@@ -1,0 +1,29 @@
+{
+    "name": "jquery-tree-table",
+    "version": "0.0.0",
+    "description": "Data driven table with (optionally) one column represented as a tree",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/mbools/jquery-tree-table.git"
+    },
+    "dependencies": {
+        "jquery": ">=1.9.0"
+    },
+    "keywords": [
+        "tree",
+        "table",
+        "html5"
+    ],
+    "license": "MIT",
+    "ignore": [
+        "**/.*",
+        "node_modules",
+        "bower_components",
+        "test",
+        "build",
+        "crush",
+        "lib",
+        "README.md",
+        "results.txt"
+    ]
+}
