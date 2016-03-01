@@ -19,9 +19,8 @@
         "**/.*",
         "node_modules",
         "bower_components",
-        "test",
+        "tests",
         "build",
-        "crush",
         "lib",
         "README.md",
         "results.txt"

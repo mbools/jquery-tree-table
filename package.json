@@ -43,6 +43,20 @@
     "grunt-json-generator": "~0.1.0",
     "grunt-contrib-cssmin": "~0.14.0",
     "grunt-contrib-clean": "~1.0.0",
-    "grunt-contrib-jshint": "~1.0.0"
+    "grunt-contrib-jshint": "~1.0.0",
+    "grunt-lesslint": "~3.0.1",
+    "grunt-jsdoc": "~1.1.0",
+    "grunt-contrib-connect": "~0.11.2",
+    "karma": "~0.13.21",
+    "grunt-karma": "~0.12.1",
+    "karma-mocha": "~0.2.2",
+    "karma-firefox-launcher": "~0.1.7",
+    "phantomjs-prebuilt": "~2.1.4",
+    "karma-phantomjs-launcher": "~1.0.0",
+    "karma-chrome-launcher": "~0.2.2",
+    "karma-chai": "~0.1.0",
+    "karma-coverage": "~0.5.3",
+    "karma-html2js-preprocessor": "~0.1.0",
+    "karma-mocha-reporter": "~1.2.3"
   }
 }

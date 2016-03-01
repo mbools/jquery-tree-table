@@ -49,6 +49,7 @@
         INSERTORDER: { ASC: 'asc', DESC: 'desc' }
     };
 
+    /** Marks debug code, will be excluded in production builds */
     var DEBUG = true;
 
     $(document).ready(function () {

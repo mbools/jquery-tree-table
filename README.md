@@ -1,6 +1,6 @@
 # jquery-tree-table
 
-For complete documentation, see [wiki](https://github.com/mbools/jquery-tree-table/wiki)
+For complete usage documentation, see [wiki](https://github.com/mbools/jquery-tree-table/wiki)
 
 
 Data driven JQuery plugin for table layout with one column (optionally) nominated for display as a tree

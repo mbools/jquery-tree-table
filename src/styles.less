@@ -2,7 +2,12 @@
 
 @control-open-icon: "\25BE";
 @control-closed-icon: "\25B8";
+@control-icon-width: 0.6em;
 
+@connector-voffset: 5px;    // Offset of connecing line from bottom of entry text
+
+@entry-rollover: 30px;    // How close to end of entry before text ellipses added
+@entry-spacer: 5px;       // Spacing on left of entry (gap between connector/control and entry)
 
 .jtt-error {
     background-color: @error-bg-color;
@@ -26,12 +31,13 @@ a.jtt-control:hover {
 }
 
 .jtt-tree-node .jtt-control {
+    box-sizing: border-box;
     display: inline-block;
     position: relative;
     cursor: pointer;
     padding-left: 3px;
-    width: 0.6em;
-    margin-left: -0.6em;
+    width: @control-icon-width;
+    margin-left: -@control-icon-width;
 }
 
 .jtt-tree-node .jtt-node-offset {
@@ -42,7 +48,7 @@ a.jtt-control:hover {
 .jtt-tree-node .jtt-connector {
     display: inline-block;
     width: 100%;
-    margin-bottom: 5px;
+    margin-bottom: @connector-voffset;
 }
 
 .jtt-tree-node .jtt-connector.jtt-show-lines {
@@ -51,10 +57,11 @@ a.jtt-control:hover {
 }
 
 .jtt-tree-node .jtt-entry {
+    box-sizing: border-box;
     vertical-align: text-bottom;
-    padding-right:30px;
+    padding-right: @entry-rollover;
     width:100%;
-    margin-left: 5px;
+    margin-left: @entry-spacer;
     display: inline-block;
     text-overflow: ellipsis;
     white-space: nowrap;

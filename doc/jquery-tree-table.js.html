@@ -1,4 +1,32 @@
-/**
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: jquery-tree-table.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: jquery-tree-table.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
  * A JQuery Widget plugin for displaying tables with one column being a tree.
  *
  * License: https://github.com/mbools/jquery-tree-table/blob/master/LICENSE
@@ -129,13 +157,13 @@
         showLines(state, immediate = false) {
             if (state !== undefined) {
                 this.options.showLines = state;
-                if (this.element.attr(ATTR.showLines) && !state) {
+                if (this.element.attr(ATTR.showLines) &amp;&amp; !state) {
                     this.element.removeAttr(ATTR.showLines);
                 }
                 else {
                     this.element.attr(ATTR.showLines, "");
                 }
-                if (immediate && !this.options.active) this._redecorate();
+                if (immediate &amp;&amp; !this.options.active) this._redecorate();
             }
             return this.options.showLines;
         },
@@ -149,7 +177,7 @@
         indent(indent, immediate) {
             this.options.indent = indent;
             this.element.attr(ATTR.indent, indent);
-            if (immediate && !this.options.active) this._redecorate();
+            if (immediate &amp;&amp; !this.options.active) this._redecorate();
         },
 
         /**
@@ -161,7 +189,7 @@
             if (typeof classes === 'string') {
                 this.options.nodeOpenGlyph = classes;
                 this.element.attr(ATTR.nodeOpenGlyph, classes);
-                if (immediate && !this.options.active) this._redecorate();
+                if (immediate &amp;&amp; !this.options.active) this._redecorate();
             }
         },
 
@@ -175,7 +203,7 @@
             if (typeof classes === 'string') {
                 this.options.nodeClosedGlyph = classes;
                 this.element.attr(ATTR.nodeClosedGlyph, classes);
-                if (immediate && !this.options.active) this._redecorate();
+                if (immediate &amp;&amp; !this.options.active) this._redecorate();
             }
         },
 
@@ -256,7 +284,7 @@
                         sortOrder: $colc.attr(ATTR.sortOrder),
                         sortType: $colc.attr(ATTR.sortType),
                     };
-                    for (let i = 0; i < colw; i++) {
+                    for (let i = 0; i &lt; colw; i++) {
                         if (rowi === 0) {
                             self._columnSettings[coli + i] = colset;
                         }
@@ -422,7 +450,7 @@
 
             let currentTNode = self._tree.children[0].$row.children('td.jtt-tree-node').index();
             if (DEBUG) console.log(`currentTNode is ${currentTNode} treeCol (with offset) is ${treeCol - 2}`);
-            if (currentTNode >= 0 && currentTNode !== treeCol - 2) {
+            if (currentTNode >= 0 &amp;&amp; currentTNode !== treeCol - 2) {
                 // Tree has moved columns, been removed, or is not specified, so wipe out any old tree decoration
                 let currNodes = self.element.find('.jtt-tree-node');
                 currNodes.find('.jtt-node-offset').remove();
@@ -441,11 +469,11 @@
                 let connector = col.find('div.jtt-node-offset');
                 if (col.length === 0) { // Decorate for the first time...
                     // TODO This currently assumes all columns in a row have no colspan!
-                    connector = $(`<div class="jtt-node-offset" style="margin-left: ${depth * indent}px"><div class="jtt-connector"></div></div>`);
+                    connector = $(`&lt;div class="jtt-node-offset" style="margin-left: ${depth * indent}px">&lt;div class="jtt-connector">&lt;/div>&lt;/div>`);
 
                     col = node.$row.children(`td:nth-of-type(${treeCol - 1})`)
                         .addClass('jtt-tree-node')
-                        .wrapInner('<div class="jtt-entry"></div>')
+                        .wrapInner('&lt;div class="jtt-entry">&lt;/div>')
                         .prepend(connector);
 
                 }
@@ -457,7 +485,7 @@
                 else {
                     let control = connector.find('.jtt-control');
                     if (control.length === 0) {
-                        control = $(`<a link="#" class="jtt-control"><span></span></a>`);
+                        control = $(`&lt;a link="#" class="jtt-control">&lt;span>&lt;/span>&lt;/a>`);
                         control
                             .on('click', function (evt) {
                                 let _self = node;
@@ -482,7 +510,7 @@
                 //                     cause changes in the sizing of the node, which would FUBAR the
                 //                     calculations below.
                 // Add the connection line (hide it if show-lines false)...
-                if (self.options.showLines && node.parent && node.parent !== '/') {
+                if (self.options.showLines &amp;&amp; node.parent &amp;&amp; node.parent !== '/') {
                     let closestParentedRow = node.$row
                         .prevAll(`tr[data-jtt-parent="${node.parent}"]`)
                         .first();
@@ -597,7 +625,7 @@
          * @private
          */
         _treeColumn() {
-            return this._columnSettings.findIndex((colset) => colset && colset.tree !== undefined) + 1;
+            return this._columnSettings.findIndex((colset) => colset &amp;&amp; colset.tree !== undefined) + 1;
         },
 
         /**
@@ -635,7 +663,7 @@
          */
         _uuid() {
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-                var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+                var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r &amp; 0x3 | 0x8);
                 return v.toString(16);
             });
         },
@@ -651,12 +679,12 @@
             let continuation = true;
             if (node.$row) {
                 continuation = cb(node, depth);
-                continuation = (continuation !== undefined && typeof continuation === 'boolean') ? continuation : true;
+                continuation = (continuation !== undefined &amp;&amp; typeof continuation === 'boolean') ? continuation : true;
             }
 
             if (continuation) {
                 let numChildren = node.children.length;
-                for (let i = 0; i < numChildren; i++) {
+                for (let i = 0; i &lt; numChildren; i++) {
                     this._treeWalk(node.children[i], cb, depth + 1);
                 }
             }
@@ -678,7 +706,7 @@
                 return child.open; // Tell treeWalk to not to bother with children of an already closed node
             };
 
-            for (let i = 0; i < numChildren; i++) {
+            for (let i = 0; i &lt; numChildren; i++) {
                 this._treeWalk(node.children[i], toggleOpenNode);
             }
 
@@ -687,3 +715,26 @@
 
     });
 }(jQuery));
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#_active">_active</a></li><li><a href="global.html#_bodyObserverState">_bodyObserverState</a></li><li><a href="global.html#_buildTree">_buildTree</a></li><li><a href="global.html#_findAncestors">_findAncestors</a></li><li><a href="global.html#_fixupParents">_fixupParents</a></li><li><a href="global.html#_imposeTreeConstraints">_imposeTreeConstraints</a></li><li><a href="global.html#_redecorate">_redecorate</a></li><li><a href="global.html#_reflowTable">_reflowTable</a></li><li><a href="global.html#_shiftErrorsToEnd">_shiftErrorsToEnd</a></li><li><a href="global.html#_toggleNode">_toggleNode</a></li><li><a href="global.html#_treeColumn">_treeColumn</a></li><li><a href="global.html#_treeWalk">_treeWalk</a></li><li><a href="global.html#_update">_update</a></li><li><a href="global.html#_updateColSettings">_updateColSettings</a></li><li><a href="global.html#_updateOptions">_updateOptions</a></li><li><a href="global.html#_uuid">_uuid</a></li><li><a href="global.html#active">active</a></li><li><a href="global.html#forceTreeConstraints">forceTreeConstraints</a></li><li><a href="global.html#indent">indent</a></li><li><a href="global.html#nodeClosedGlyph">nodeClosedGlyph</a></li><li><a href="global.html#nodeOpenGlyph">nodeOpenGlyph</a></li><li><a href="global.html#redecorate">redecorate</a></li><li><a href="global.html#showLines">showLines</a></li><li><a href="global.html#update">update</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Tue Mar 01 2016 18:48:26 GMT+0000 (GMT)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

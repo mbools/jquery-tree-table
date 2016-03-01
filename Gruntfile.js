@@ -32,6 +32,15 @@ module.exports = function (grunt) {
                 src: ['**/*.less']
             }
         },
+        lesslint: {
+            options: {
+                csslint: {
+                    'box-sizing' : false, // We're not supporting IE6/7 so this rule is not important
+                    'adjoining-classes': false, // Another IE6 rule we don't need
+                },
+            },
+            src: ['src/**/*.less']
+        },
         cssmin: {
             dist: {
                 files: {
@@ -64,7 +73,7 @@ module.exports = function (grunt) {
                     quiet: false,
                     clearRequireCache: false
                 },
-                src: ['test/**/*.js']
+                src: ['tests/**/*.js']
             }
         },
         babel: {
@@ -105,9 +114,8 @@ module.exports = function (grunt) {
                         "**/.*",
                         "node_modules",
                         "bower_components",
-                        "test",
+                        "tests",
                         "build",
-                        "crush",
                         "lib",
                         "README.md",
                         "results.txt"
@@ -137,9 +145,65 @@ module.exports = function (grunt) {
                 esversion: 6
             },
             dist: {
-                src: ['Gruntfile.js', 'src/**/*.js']
+                src: ['Gruntfile.js', 'src/**/*.js', 'tests/**/*-test.js']
             }
-        }
+        },
+        jsdoc: {
+            dist: {
+                src: ['src/**/*.js'],
+                options: {
+                    destination: 'doc',
+                    readme: 'README.md'
+                }
+            }
+        },
+        connect: {
+            dev: {
+                options: {
+                    port: 8008,
+                    protocol: 'http',
+                    hostname: '*',
+                    base: './',
+                    keepalive: true
+                }
+            }
+        },
+        karma: {
+            options: {
+                configFile: 'tests/karma.config.js',
+                files: [
+                    'node_modules/chai/chai.js',
+
+                    'bower_components/jquery/dist/jquery.js',
+
+                    'lib/jquery-ui-widget.1.11.4.js',
+
+                    'build/**/*.js',
+                    'tests/**/*-test.js',
+                    'tests/fixtures/**/*.html'
+                ],
+            },
+            dev: {  // for developer watched testing
+                browsers: ['PhantomJS', 'Firefox', 'Chrome'],
+                singleRun: false,
+                autoWatch: true,
+            },
+            test: { // Single shot testing
+                browsers: ['PhantomJS', 'Firefox', 'Chrome'],
+                singleRun: true,
+                autoWatch: false,
+            },
+            dist: { // Distribution build testing
+                singleRun: true,
+                autoWatch: false,
+                browsers: ['PhantomJS'],
+            },
+            CI: {   // CI build testing
+                singleRun: true,
+                autoWatch: false,
+                browsers: ['PhantomJS'],
+            }
+        },
     })
     ;
 
@@ -149,17 +213,14 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-contrib-less');
     grunt.loadNpmTasks('grunt-contrib-cssmin');
     grunt.loadNpmTasks('grunt-json-generator');
+    grunt.loadNpmTasks('grunt-lesslint');
+    grunt.loadNpmTasks('grunt-jsdoc');
 //    grunt.loadNpmTasks('grunt-contrib-watch');
 
     grunt.loadNpmTasks('grunt-mocha-test');
 
 
-    grunt.registerTask('test', ['babel', 'less']); // TODO Automate running test in browser
-    grunt.registerTask('default', ['clean', 'jshint', 'babel', 'less', 'concat', 'uglify', 'cssmin', 'json_generator', 'copy:lib']);
-
-
-    //////////////
-    ////// Helpers
-
-
+    grunt.registerTask('serve', ['clean', 'babel', 'less', 'karma:dev']);
+    grunt.registerTask('test', ['clean', 'babel', 'less', 'karma:test']); // TODO Automate running tests in browser
+    grunt.registerTask('default', ['clean', 'jshint', 'jsdoc', 'babel', 'less', 'lesslint', 'concat', 'uglify', 'cssmin', 'karma:dist', 'json_generator', 'copy:lib']);
 };

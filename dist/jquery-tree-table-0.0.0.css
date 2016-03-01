@@ -15,6 +15,7 @@ a.jtt-control:hover {
   box-sizing: border-box;
 }
 .jtt-tree-node .jtt-control {
+  box-sizing: border-box;
   display: inline-block;
   position: relative;
   cursor: pointer;
@@ -36,6 +37,7 @@ a.jtt-control:hover {
   border-left: thin dotted grey;
 }
 .jtt-tree-node .jtt-entry {
+  box-sizing: border-box;
   vertical-align: text-bottom;
   padding-right: 30px;
   width: 100%;
