@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>Simple Table</title>
-    <link rel="stylesheet" href="../node_modules/mocha/mocha.css">
     <link rel="stylesheet" href="../../build/styles.css">
 </head>
 <body>
@@ -21,7 +20,7 @@
     </thead>
     <tbody>
     <tr data-jtt-fixed-parent="A">
-        <td>item OUT A.1</td>
+        <td style="overflow-wrap: break-word">item OUT A.1  with a lot of contnent that will probbaly roll over if the window is swuashed</td>
         <td>item 1</td>
         <td>data 1</td>
     </tr>
@@ -463,23 +462,9 @@
     </tbody>
 </table>
 
-<div id="mocha"></div>
-<script src="../node_modules/mocha/mocha.js"></script>
-<script src="../node_modules/chai/chai.js"></script>
-<script>
-    mocha.ui('bdd');
-    mocha.reporter('html');
-    var expect = chai.expect;
-    var assert = chai.assert;
-</script>
-
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
 <script src="../../lib/jquery-ui-widget.1.11.4.min.js"></script>
 <script src="../../build/jquery-tree-table.js"></script>
-
-<script>
-    mocha.run();
-</script>
 
 </body>
 </html>
