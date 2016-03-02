@@ -513,7 +513,11 @@
 
                     let parentPos = parentConnector.offset().top;
 
-                    let connectorHeight = Math.ceil(col.offset().top + (col.height()/2) - (parentPos + parentConnector.outerHeight(false)));
+                    let connLine = col.find('.jtt-entry:first-line');
+
+                    let anchor = col.find('div.jtt-entry');
+
+                    let connectorHeight = Math.ceil(anchor.offset().top + (anchor.height()/2) - (parentPos + parentConnector.outerHeight(false)));
 
                     node.$row.find('div.jtt-connector')
                         .addClass('jtt-show-lines')
