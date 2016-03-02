@@ -7,7 +7,7 @@
  *
  */
 
-(function ($) {
+(function ($, window) {
     "use strict";
 
     const ATTR = {
@@ -47,7 +47,13 @@
         INSERTORDER: {ASC: 'asc', DESC: 'desc'}
     };
 
-    /** Marks debug code, will be excluded in production builds */
+    /**
+     * Marks debug code, will be excluded in production builds
+     *
+     * @constant
+     * @type {boolean}
+     * @default
+     * */
     const DEBUG = true;
 
     $(document).ready(function () {
@@ -119,6 +125,7 @@
         },
 
         /**
+         * Set showLines. When no state supplied simply returns current state.
          *
          * @param state
          * @param immediate {boolean} If true then table is redrawn immediately, when false (the default)
@@ -140,7 +147,6 @@
             return this.options.showLines;
         },
 
-
         /**
          * Set the indentation applied to each node level
          * @param indent {int} Indent applied to each node level in px
@@ -149,6 +155,19 @@
         indent(indent, immediate) {
             this.options.indent = indent;
             this.element.attr(ATTR.indent, indent);
+            if (immediate && !this.options.active) this._redecorate();
+        },
+
+
+        /**
+         * Set both open and closed glyph icons
+         * @param open {string} classed to be applied to span representing openGlyph on a node
+         * @param closed {string}  classed to be applied to span representing closedGlyph on a node
+         * @param immediate {boolean}
+         */
+        nodeGlyphs(open, closed, immediate) {
+            this.nodeOpenGlyph(open, false);
+            this.nodeClosedGlyph(closed, false);
             if (immediate && !this.options.active) this._redecorate();
         },
 
@@ -165,7 +184,6 @@
             }
         },
 
-
         /**
          * Set classes to be applied to span representing closedGlyph on node
          * @param classes {string} classes to be applied to span representing closedGlyph on a node
@@ -178,6 +196,7 @@
                 if (immediate && !this.options.active) this._redecorate();
             }
         },
+
 
         /**
          * Redecorate the tree, redrawing all connecting lines, icons, etc.
@@ -494,7 +513,7 @@
 
                     let parentPos = parentConnector.offset().top;
 
-                    let connectorHeight = col.offset().top + (col.find('div.jtt-node-offset').height()/2) - (parentPos + parentConnector.outerHeight(false) -1);
+                    let connectorHeight = col.offset().top + (col.find('div.jtt-node-offset').height() / 2) - (parentPos + parentConnector.outerHeight(false) - 1);
 
                     node.$row.find('div.jtt-connector')
                         .addClass('jtt-show-lines')
@@ -560,6 +579,21 @@
         },
 
         /**
+         * Used to bind to resize and orientationchange events.
+         * These are common events that cause tables to change shape/size, which may need the connecting
+         * lines redrawing.
+         * @param evt
+         * @returns {boolean}
+         * @private
+         */
+        _forceRedecorate(evt) {
+            evt.preventDefault();
+            evt.stopPropagation();
+            evt.data._redecorate();
+            return false;
+        },
+
+        /**
          * Turn the table body observer (defined when table is marked 'active') on/off
          * @param state {boolean} true = on, false = off
          * @private
@@ -572,10 +606,12 @@
                         subtree: true,
                         attributes: true
                     });
+                    $(window).on("resize orientationchange", this, this._forceRedecorate);
                     if (DEBUG) console.log("OBSERVER ON");
                 }
                 else {
                     this._observers.tbody.disconnect();
+                    $(window).off("resize orientationchange", this._forceRedecorate);
                     if (DEBUG) console.log("OBSERVER OFF");
                 }
             }
@@ -686,4 +722,4 @@
         },
 
     });
-}(jQuery));
+}(jQuery, window));

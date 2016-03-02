@@ -221,6 +221,6 @@ module.exports = function (grunt) {
 
 
     grunt.registerTask('serve', ['clean', 'babel', 'less', 'karma:dev']);
-    grunt.registerTask('test', ['clean', 'babel', 'less', 'karma:test']); // TODO Automate running tests in browser
+    grunt.registerTask('test', ['clean', 'babel', 'less', 'karma:test']);
     grunt.registerTask('default', ['clean', 'jshint', 'jsdoc', 'babel', 'less', 'lesslint', 'concat', 'uglify', 'cssmin', 'karma:dist', 'json_generator', 'copy:lib']);
 };
