@@ -7,7 +7,7 @@ Data driven JQuery plugin for table layout with one column (optionally) nominate
 
 Create table as normal. Header cells can be marked with column controls, each row with row controls.
 
-See API for methods to control jquery-tree-table programatically.
+See [API](https://github.com/mbools/jquery-tree-table/wiki/JQuery-API) for methods to control jquery-tree-table programatically.
 
 If the table is identified as `active` then a DOM observer is used to ensure constraints (see below) are maintained
 even as the table's content is changed.
