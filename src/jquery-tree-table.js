@@ -249,10 +249,7 @@
 
             this.options.indent = +this.element.attr(ATTR.indent) || this.options.indent;
 
-            let insertOrderAttr = this.element.attr(ATTR.insertOrder);
-            if (DEFAULT.INSERTORDER.ASC === insertOrderAttr || DEFAULT.INSERTORDER.DESC === insertOrderAttr) {
-                this.options.insertOrder = insertOrderAttr;
-            }
+            this.options.insertOrder = this.element.attr(ATTR.insertOrder) !== undefined  ? true : this.options.insertOrder;
 
             this.options.forceTreeConstraints = this.element.attr(ATTR.forceTreeConstraints) !== undefined ? true : this.options.forceTreeConstraints;
         },
@@ -326,8 +323,8 @@
                     if (!parent) {
                         // When no parent is specified the row's position is used to find it's closest
                         // sibling with a parent OR the root node if all previous rows have no parent.
-                        let $lastParentedNode = $row.prevAll('[' + ATTR.parent + ']').last();
-                        if ($lastParentedNode.length) {
+                        let $lastParentedNode = $row.prevAll('[' + ATTR.parent + ']').first();
+                        if ($lastParentedNode.length && self.options.insertOrder) {
                             parent = $lastParentedNode.attr(ATTR.parent);
                         }
                         else {
