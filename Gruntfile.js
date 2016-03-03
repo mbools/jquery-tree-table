@@ -203,13 +203,23 @@ module.exports = function (grunt) {
                 autoWatch: false,
                 browsers: ['PhantomJS'],
             }
+        },
+        concurrent: {
+            assets: ['js', 'css', 'json_generator', 'copy:lib'],
+            jsprep: ['newer:jsdoc', 'newer:babel']
         }
     });
 
 
     require('load-grunt-tasks')(grunt);
 
-    grunt.registerTask('serve', ['clean', 'babel', 'less', 'karma:dev']);
-    grunt.registerTask('test', ['clean', 'babel', 'less', 'karma:test']);
-    grunt.registerTask('default', ['clean', 'jshint', 'jsdoc', 'babel', 'less', 'lesslint', 'concat', 'uglify', 'cssmin', 'karma:dist', 'json_generator', 'copy:lib']);
+    grunt.registerTask('js', ['newer:jshint', 'concurrent:jsprep']);
+    grunt.registerTask('css', ['newer:lesslint', 'newer:less']);
+    grunt.registerTask('minify', ['concat', 'uglify', 'cssmin']);
+    grunt.registerTask('build', ['clean', 'concurrent:assets', 'minify']);
+
+
+    grunt.registerTask('serve', ['build', 'karma:dev']);
+    grunt.registerTask('test', ['build', 'karma:test']);
+    grunt.registerTask('default', ['build', 'karma:dist']);
 };
