@@ -226,7 +226,10 @@
             this._updateColSettings();
 
             this._buildTree();
-            this._imposeTreeConstraints();
+
+            if (this.options.forceTreeConstraints) {
+                this._imposeTreeConstraints();
+            }
 
             this._sort();
 
