@@ -4,7 +4,7 @@ module.exports = function (grunt) {
     var _package = grunt.file.readJSON('./package.json');
 
     grunt.initConfig({
-        pkg: grunt.file.readJSON('package.json'),
+        pkg: _package,
         concat: {
             options: {
                 separator: '///'
@@ -203,22 +203,11 @@ module.exports = function (grunt) {
                 autoWatch: false,
                 browsers: ['PhantomJS'],
             }
-        },
-    })
-    ;
+        }
+    });
 
-    grunt.loadNpmTasks('grunt-contrib-clean');
-    grunt.loadNpmTasks('grunt-contrib-jshint');
-    grunt.loadNpmTasks('grunt-contrib-uglify');
-    grunt.loadNpmTasks('grunt-contrib-less');
-    grunt.loadNpmTasks('grunt-contrib-cssmin');
-    grunt.loadNpmTasks('grunt-json-generator');
-    grunt.loadNpmTasks('grunt-lesslint');
-    grunt.loadNpmTasks('grunt-jsdoc');
-//    grunt.loadNpmTasks('grunt-contrib-watch');
 
-    grunt.loadNpmTasks('grunt-mocha-test');
-
+    require('load-grunt-tasks')(grunt);
 
     grunt.registerTask('serve', ['clean', 'babel', 'less', 'karma:dev']);
     grunt.registerTask('test', ['clean', 'babel', 'less', 'karma:test']);
