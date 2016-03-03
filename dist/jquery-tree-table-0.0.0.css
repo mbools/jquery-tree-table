@@ -15,22 +15,21 @@ a.jtt-control:hover {
   box-sizing: border-box;
 }
 .jtt-tree-node .jtt-control {
+  vertical-align: middle;
   box-sizing: border-box;
   display: inline-block;
   position: relative;
+  z-index: 1;
   cursor: pointer;
   padding-left: 3px;
-  width: 0.6em;
-  margin-left: -0.6em;
 }
 .jtt-tree-node .jtt-node-offset {
   display: inline-block;
-  width: 1.2em;
+  width: 0.5em;
+  height: 1em;
 }
 .jtt-tree-node .jtt-connector {
-  display: inline-block;
-  width: 100%;
-  margin-bottom: 5px;
+  position: absolute;
 }
 .jtt-tree-node .jtt-connector.jtt-show-lines {
   border-bottom: thin dotted grey;

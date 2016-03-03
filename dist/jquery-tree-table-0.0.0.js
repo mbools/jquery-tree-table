@@ -9,7 +9,7 @@
  *
  */
 
-(function ($) {
+(function ($, window) {
     "use strict";
 
     var ATTR = {
@@ -49,7 +49,13 @@
         INSERTORDER: { ASC: 'asc', DESC: 'desc' }
     };
 
-    /** Marks debug code, will be excluded in production builds */
+    /**
+     * Marks debug code, will be excluded in production builds
+     *
+     * @constant
+     * @type {boolean}
+     * @default
+     * */
     var DEBUG = true;
 
     $(document).ready(function () {
@@ -123,6 +129,7 @@
 
 
         /**
+         * Set showLines. When no state supplied simply returns current state.
          *
          * @param state
          * @param immediate {boolean} If true then table is redrawn immediately, when false (the default)
@@ -154,6 +161,19 @@
         indent: function indent(_indent, immediate) {
             this.options.indent = _indent;
             this.element.attr(ATTR.indent, _indent);
+            if (immediate && !this.options.active) this._redecorate();
+        },
+
+
+        /**
+         * Set both open and closed glyph icons
+         * @param open {string} classed to be applied to span representing openGlyph on a node
+         * @param closed {string}  classed to be applied to span representing closedGlyph on a node
+         * @param immediate {boolean}
+         */
+        nodeGlyphs: function nodeGlyphs(open, closed, immediate) {
+            this.nodeOpenGlyph(open, false);
+            this.nodeClosedGlyph(closed, false);
             if (immediate && !this.options.active) this._redecorate();
         },
 
@@ -336,7 +356,7 @@
                         parent: parent,
                         $row: $row,
                         children: [],
-                        open: true
+                        open: $row.find('.jtt-closed').length === 0
                     };
                 }
             });
@@ -482,18 +502,25 @@
                 //                     calculations below.
                 // Add the connection line (hide it if show-lines false)...
                 if (self.options.showLines && node.parent && node.parent !== '/') {
+                    var trueParent = false;
                     var closestParentedRow = node.$row.prevAll('tr[data-jtt-parent="' + node.parent + '"]').first();
                     if (closestParentedRow.length === 0) {
                         closestParentedRow = node.$row.prev('tr[data-jtt-id="' + node.parent + '"]');
+                        trueParent = true;
                     }
 
-                    var parentConnector = closestParentedRow.find('div.jtt-connector');
+                    var anchor = col.find('div.jtt-node-offset');
+                    var parentConnector = trueParent ? closestParentedRow.find('.jtt-control') : closestParentedRow.find('div.jtt-connector');
+                    var controlOffset = trueParent ? parentConnector.width() / 2 : 0;
 
-                    var parentPos = parentConnector.offset().top;
+                    var parentConnectorBottom = parentConnector.offset().top + parentConnector.outerHeight(false);
+                    var parentConnectorLeft = parentConnector.offset().left + controlOffset;
 
-                    var connectorHeight = col.offset().top + col.find('div.jtt-node-offset').height() / 2 - (parentPos + parentConnector.outerHeight(false) - 1);
+                    var connectorHeight = Math.ceil(anchor.offset().top + anchor.outerHeight() / 2 - parentConnectorBottom);
 
-                    node.$row.find('div.jtt-connector').addClass('jtt-show-lines').css('height', connectorHeight + 'px').css('margin-top', '-' + connectorHeight + 'px');
+                    var connectorWidth = anchor.offset().left - parentConnectorLeft - controlOffset;
+
+                    node.$row.find('div.jtt-connector').addClass('jtt-show-lines').css('height', connectorHeight + 'px').css('width', connectorWidth + 'px').offset({ top: parentConnectorBottom, left: parentConnectorLeft + controlOffset });
                 } else {
                     node.$row.find('div.jtt-connector').removeClass('jtt-show-lines');
                 }
@@ -552,6 +579,22 @@
 
 
         /**
+         * Used to bind to resize and orientationchange events.
+         * These are common events that cause tables to change shape/size, which may need the connecting
+         * lines redrawing.
+         * @param evt
+         * @returns {boolean}
+         * @private
+         */
+        _forceRedecorate: function _forceRedecorate(evt) {
+            evt.preventDefault();
+            evt.stopPropagation();
+            evt.data._redecorate();
+            return false;
+        },
+
+
+        /**
          * Turn the table body observer (defined when table is marked 'active') on/off
          * @param state {boolean} true = on, false = off
          * @private
@@ -564,9 +607,11 @@
                         subtree: true,
                         attributes: true
                     });
+                    $(window).on("resize orientationchange", this, this._forceRedecorate);
                     if (DEBUG) console.log("OBSERVER ON");
                 } else {
                     this._observers.tbody.disconnect();
+                    $(window).off("resize orientationchange", this._forceRedecorate);
                     if (DEBUG) console.log("OBSERVER OFF");
                 }
             }
@@ -688,5 +733,5 @@
             this._redecorate();
         }
     });
-})(jQuery);
+})(jQuery, window);
 //# sourceMappingURL=jquery-tree-table.js.map

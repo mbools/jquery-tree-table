@@ -348,7 +348,7 @@
                         parent: parent,
                         $row: $row,
                         children: [],
-                        open: true,
+                        open: ($row.find('.jtt-closed').length === 0),
                     };
                 }
             });
@@ -502,27 +502,31 @@
                 //                     calculations below.
                 // Add the connection line (hide it if show-lines false)...
                 if (self.options.showLines && node.parent && node.parent !== '/') {
+                    let trueParent = false;
                     let closestParentedRow = node.$row
                         .prevAll(`tr[data-jtt-parent="${node.parent}"]`)
                         .first();
                     if (closestParentedRow.length === 0) {
                         closestParentedRow = node.$row.prev(`tr[data-jtt-id="${node.parent}"]`);
+                        trueParent=true;
                     }
 
-                    let parentConnector = closestParentedRow.find('div.jtt-connector');
+                    let anchor = col.find('div.jtt-node-offset');
+                    let parentConnector = (trueParent) ? closestParentedRow.find('.jtt-control') : closestParentedRow.find('div.jtt-connector');
+                    let controlOffset = (trueParent) ? parentConnector.width()/2 : 0;
 
-                    let parentPos = parentConnector.offset().top;
+                    let parentConnectorBottom = parentConnector.offset().top + parentConnector.outerHeight(false);
+                    let parentConnectorLeft = parentConnector.offset().left + controlOffset;
 
-                    let connLine = col.find('.jtt-entry:first-line');
+                    let connectorHeight = Math.ceil(anchor.offset().top + (anchor.outerHeight()/2) - parentConnectorBottom);
 
-                    let anchor = col.find('div.jtt-entry');
-
-                    let connectorHeight = Math.ceil(anchor.offset().top + (anchor.height()/2) - (parentPos + parentConnector.outerHeight(false)));
+                    let connectorWidth = anchor.offset().left - parentConnectorLeft - controlOffset;
 
                     node.$row.find('div.jtt-connector')
                         .addClass('jtt-show-lines')
                         .css('height', `${connectorHeight}px`)
-                        .css('margin-top', `-${connectorHeight}px`);
+                        .css('width', `${connectorWidth}px`)
+                        .offset({top: parentConnectorBottom, left: parentConnectorLeft + controlOffset});
                 }
                 else {
                     node.$row.find('div.jtt-connector')
