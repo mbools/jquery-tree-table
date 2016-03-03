@@ -16,7 +16,7 @@
         insertOrder: 'data-jtt-insert-order',
         forceTreeConstraints: 'data-jtt-force-tree-constraints',
         indent: 'data-jtt-indent',
-        showLines: 'data-jtt-draw-lines',
+        hideLines: 'data-jtt-hide-lines',
         nodeOpenGlyph: 'data-jtt-open-glyph',
         nodeClosedGlyph: 'data-jtt-closed-glyph',
 
@@ -67,7 +67,7 @@
             active: false,  // Whether to use DOM observer
             insertOrder: false, // Whether to treat undecorate rows according to their position
             forceTreeConstraints: false, // Whether to impose tree contrainsts even if no jtt-tree column specified
-            showLines: true,    // Whether to draw connecting lines on tree
+            hideLines: false,    // Whether to hide connecting lines on tree
             nodeOpenGlyph: DEFAULT.OPENGLYPH,
             nodeClosedGlyph: DEFAULT.CLOSEDGLYPH,
             indent: DEFAULT.INDENT,
@@ -125,7 +125,7 @@
         },
 
         /**
-         * Set showLines. When no state supplied simply returns current state.
+         * Set hideLines. When no state supplied simply returns current state.
          *
          * @param state
          * @param immediate {boolean} If true then table is redrawn immediately, when false (the default)
@@ -133,18 +133,18 @@
          *                              explicitly calls redecorate()
          * @returns {boolean}
          */
-        showLines(state, immediate = false) {
+        hideLines(state, immediate = false) {
             if (state !== undefined) {
-                this.options.showLines = state;
-                if (this.element.attr(ATTR.showLines) && !state) {
-                    this.element.removeAttr(ATTR.showLines);
+                this.options.hideLines = state;
+                if (this.element.attr(ATTR.hideLines) && !state) {
+                    this.element.removeAttr(ATTR.hideLines);
                 }
                 else {
-                    this.element.attr(ATTR.showLines, "");
+                    this.element.attr(ATTR.hideLines, "");
                 }
                 if (immediate && !this.options.active) this._redecorate();
             }
-            return this.options.showLines;
+            return this.options.hideLines;
         },
 
         /**
@@ -253,6 +253,8 @@
             this.options.indent = +this.element.attr(ATTR.indent) || this.options.indent;
 
             this.options.insertOrder = this.element.attr(ATTR.insertOrder) !== undefined  ? true : this.options.insertOrder;
+
+            this.options.hideLines = this.element.attr(ATTR.hideLines) !== undefined  ? true : this.options.hideLines;
 
             this.options.forceTreeConstraints = this.element.attr(ATTR.forceTreeConstraints) !== undefined ? true : this.options.forceTreeConstraints;
         },
@@ -501,7 +503,7 @@
                 //                     cause changes in the sizing of the node, which would FUBAR the
                 //                     calculations below.
                 // Add the connection line (hide it if show-lines false)...
-                if (self.options.showLines && node.parent && node.parent !== '/') {
+                if (!self.options.hideLines && node.parent && node.parent !== '/') {
                     let trueParent = false;
                     let closestParentedRow = node.$row
                         .prevAll(`tr[data-jtt-parent="${node.parent}"]`)
