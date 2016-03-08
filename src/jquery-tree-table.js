@@ -44,7 +44,8 @@
         CLOSEDGLYPH: 'jtt-closed',  // Class(es) for inclusion of closed node glyph
         INDENT: 15,                 // Default indentation on each tree level, in px
         ROOTPATH: '/',
-        INSERTORDER: {ASC: 'asc', DESC: 'desc'}
+        VALIDSORTORDER: {ASC: 'asc', DESC: 'desc'},
+        VALIDSORTTYPE: {ALPHA: 'alpa', NUM: 'num'},
     };
 
     /**
@@ -77,6 +78,8 @@
         },
 
         _columnSettings: [],
+
+        _sortColumns: [],
 
         _observers: {},     // DOM observers (when table is active)
 
@@ -278,6 +281,7 @@
                         sortType: $colc.attr(ATTR.sortType),
                     };
                     for (let i = 0; i < colw; i++) {
+                        colset.colIndex = coli + i;
                         if (rowi === 0) {
                             self._columnSettings[coli + i] = colset;
                         }
@@ -304,8 +308,6 @@
             let nodes = {};
 
             nodes[DEFAULT.ROOTPATH] = {id: DEFAULT.ROOTPATH, children: []};
-
-//            this._fixupParents(); // Globlally set all jtt-parent to jtt-fixed-parent since there's no other possibility
 
             this._tree = {};
 
@@ -375,6 +377,8 @@
         _imposeTreeConstraints() {
             let self = this;
 
+            if (!(self.options.forceTreeConstraints || self._treeColumn() > 0)) return;
+
             self._treeWalk(self._tree, (node) => {
                 // Move node to parents according to limit-parent and fixed-parent constraints
                 let fixed_parent = node.$row.attr(ATTR.fixedParent);
@@ -411,10 +415,6 @@
          * @private
          */
         _reflowTable() {
-            // Since we have no idea how large this table might be, let's work outside the DOM...
-//            let parent = this.element.parent();
-//            let table = this.element.detach();
-
             if (!(this.options.forceTreeConstraints || this._treeColumn())) {  // There's no tree column, and no force in place, so the constraints don't matter
                 return;
             }
@@ -426,9 +426,6 @@
 
 
             this._shiftErrorsToEnd();
-
-            // Replace in the DOM...
-//            parent.element.append(table);
         },
 
         /**
