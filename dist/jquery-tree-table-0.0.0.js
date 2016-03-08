@@ -18,7 +18,7 @@
         insertOrder: 'data-jtt-insert-order',
         forceTreeConstraints: 'data-jtt-force-tree-constraints',
         indent: 'data-jtt-indent',
-        showLines: 'data-jtt-draw-lines',
+        hideLines: 'data-jtt-hide-lines',
         nodeOpenGlyph: 'data-jtt-open-glyph',
         nodeClosedGlyph: 'data-jtt-closed-glyph',
 
@@ -46,7 +46,8 @@
         CLOSEDGLYPH: 'jtt-closed', // Class(es) for inclusion of closed node glyph
         INDENT: 15, // Default indentation on each tree level, in px
         ROOTPATH: '/',
-        INSERTORDER: { ASC: 'asc', DESC: 'desc' }
+        VALIDSORTORDER: { ASC: 'asc', DESC: 'desc' },
+        VALIDSORTTYPE: { ALPHA: 'alpa', NUM: 'num' }
     };
 
     /**
@@ -69,7 +70,7 @@
             active: false, // Whether to use DOM observer
             insertOrder: false, // Whether to treat undecorate rows according to their position
             forceTreeConstraints: false, // Whether to impose tree contrainsts even if no jtt-tree column specified
-            showLines: true, // Whether to draw connecting lines on tree
+            hideLines: false, // Whether to hide connecting lines on tree
             nodeOpenGlyph: DEFAULT.OPENGLYPH,
             nodeClosedGlyph: DEFAULT.CLOSEDGLYPH,
             indent: DEFAULT.INDENT,
@@ -79,6 +80,8 @@
 
         // Whether to log error messages to the console
         _columnSettings: [],
+
+        _sortColumns: [],
 
         _observers: {}, // DOM observers (when table is active)
 
@@ -129,7 +132,7 @@
 
 
         /**
-         * Set showLines. When no state supplied simply returns current state.
+         * Set hideLines. When no state supplied simply returns current state.
          *
          * @param state
          * @param immediate {boolean} If true then table is redrawn immediately, when false (the default)
@@ -137,19 +140,19 @@
          *                              explicitly calls redecorate()
          * @returns {boolean}
          */
-        showLines: function showLines(state) {
+        hideLines: function hideLines(state) {
             var immediate = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
 
             if (state !== undefined) {
-                this.options.showLines = state;
-                if (this.element.attr(ATTR.showLines) && !state) {
-                    this.element.removeAttr(ATTR.showLines);
+                this.options.hideLines = state;
+                if (this.element.attr(ATTR.hideLines) && !state) {
+                    this.element.removeAttr(ATTR.hideLines);
                 } else {
-                    this.element.attr(ATTR.showLines, "");
+                    this.element.attr(ATTR.hideLines, "");
                 }
                 if (immediate && !this.options.active) this._redecorate();
             }
-            return this.options.showLines;
+            return this.options.hideLines;
         },
 
 
@@ -235,7 +238,10 @@
             this._updateColSettings();
 
             this._buildTree();
-            this._imposeTreeConstraints();
+
+            if (this.options.forceTreeConstraints) {
+                this._imposeTreeConstraints();
+            }
 
             this._sort();
 
@@ -258,10 +264,9 @@
 
             this.options.indent = +this.element.attr(ATTR.indent) || this.options.indent;
 
-            var insertOrderAttr = this.element.attr(ATTR.insertOrder);
-            if (DEFAULT.INSERTORDER.ASC === insertOrderAttr || DEFAULT.INSERTORDER.DESC === insertOrderAttr) {
-                this.options.insertOrder = insertOrderAttr;
-            }
+            this.options.insertOrder = this.element.attr(ATTR.insertOrder) !== undefined ? true : this.options.insertOrder;
+
+            this.options.hideLines = this.element.attr(ATTR.hideLines) !== undefined ? true : this.options.hideLines;
 
             this.options.forceTreeConstraints = this.element.attr(ATTR.forceTreeConstraints) !== undefined ? true : this.options.forceTreeConstraints;
         },
@@ -286,6 +291,7 @@
                         sortType: $colc.attr(ATTR.sortType)
                     };
                     for (var i = 0; i < colw; i++) {
+                        colset.colIndex = coli + i;
                         if (rowi === 0) {
                             self._columnSettings[coli + i] = colset;
                         } else {
@@ -296,10 +302,12 @@
                             }
                         }
                     }
+                    if (colset.sort !== undefined) self._sortColumns.push(colset);
                     coli += colw;
                 });
             });
             if (DEBUG) console.log("Current column settings: " + this._columnSettings);
+            if (DEBUG) console.log("Current column sort: " + this._sortColumns + "(" + this._sortColumns.length + ")");
         },
 
 
@@ -312,8 +320,6 @@
             var nodes = {};
 
             nodes[DEFAULT.ROOTPATH] = { id: DEFAULT.ROOTPATH, children: [] };
-
-            //            this._fixupParents(); // Globlally set all jtt-parent to jtt-fixed-parent since there's no other possibility
 
             this._tree = {};
 
@@ -335,8 +341,8 @@
                     if (!parent) {
                         // When no parent is specified the row's position is used to find it's closest
                         // sibling with a parent OR the root node if all previous rows have no parent.
-                        var $lastParentedNode = $row.prevAll('[' + ATTR.parent + ']').last();
-                        if ($lastParentedNode.length) {
+                        var $lastParentedNode = $row.prevAll('[' + ATTR.parent + ']').first();
+                        if ($lastParentedNode.length && self.options.insertOrder) {
                             parent = $lastParentedNode.attr(ATTR.parent);
                         } else {
                             parent = DEFAULT.ROOTPATH;
@@ -364,8 +370,10 @@
             self._tree = nodes[DEFAULT.ROOTPATH];
             delete nodes[DEFAULT.ROOTPATH];
 
+            var treeConstrained = self.options.forceTreeConstraints || self._treeColumn() !== 0;
+
             for (var node in nodes) {
-                if (nodes[node].parent !== DEFAULT.ROOTPATH) {
+                if (treeConstrained && nodes[node].parent !== DEFAULT.ROOTPATH) {
                     nodes[nodes[node].parent].children.push(nodes[node]);
                 } else {
                     self._tree.children.push(nodes[node]);
@@ -382,6 +390,8 @@
             var _this = this;
 
             var self = this;
+
+            if (!(self.options.forceTreeConstraints || self._treeColumn() > 0)) return;
 
             self._treeWalk(self._tree, function (node) {
                 // Move node to parents according to limit-parent and fixed-parent constraints
@@ -409,7 +419,66 @@
 
 
         // Sort the table within set constraints
-        _sort: function _sort() {},
+        _sort: function _sort() {
+            var sortCols = this._sortColumns;
+            if (sortCols !== undefined && sortCols.length === 0) return;
+
+            var numSortCols = sortCols.length;
+            if (numSortCols === 0) return;
+
+            var simpleSort = function simpleSort(scol) {
+                return function (a, b) {
+                    if (DEBUG) console.log('Checking col(' + scol.colIndex + '): ' + a.$row.find('td:nth-child(1)').text() + ' AGAINST ' + b.$row.find('td:nth-child(1)').text());
+                    var result = 0;
+                    var x = a.$row.find('td:nth-child(' + scol.colIndex + ')').text();
+                    var y = b.$row.find('td:nth-child(' + scol.colIndex + ')').text();
+                    if (scol.sortType === DEFAULT.VALIDSORTTYPE.NUM) {
+                        x = Number(x);
+                        y = Number(y);
+                    }
+                    if (scol.sortOrder === DEFAULT.VALIDSORTORDER.ASC) {
+                        result = x < y ? -1 : x === y ? 0 : 1;
+                    } else {
+                        result = x > y ? -1 : x === y ? 0 : 1;
+                    }
+                    return result;
+                };
+            };
+            var nodecb = function nodecb(node, depth, sortCols) {
+                var numChildren = node.children.length;
+                var sortCol = sortCols[0];
+                if (numChildren < 2 || sortCol === undefined) return;
+
+                var sortBy = typeof sortCol.sortFn === 'function' ? sortCol.sortFn : simpleSort(sortCol);
+                // Sort this node's children
+                node.children.sort(sortBy);
+
+                var numSortCols = sortCols.length;
+                var prevSortColIndex = sortCol.colIndex;
+                for (var sortIndex = 1; sortIndex < numSortCols; sortIndex++) {
+                    var gstart = 0;
+                    var dupFound = false;
+                    var inDup = false;
+                    for (var i = 1; i < numChildren; i++) {
+                        if (node.children[gstart].$row.find('td:nth-child(' + prevSortColIndex + ')').text() === node.children[i].$row.find('td:nth-child(' + prevSortColIndex + ')').text()) {
+                            dupFound = true;
+                            inDup = true;
+                        } else if (inDup) {
+                            inDup = false;
+                            if (gstart != i) {
+                                var glen = i - gstart;
+                                if (glen >= 2) {
+                                    sortBy = typeof sortCol.sortFn === 'function' ? sortCol.sortFn : simpleSort(sortCols[sortIndex]);
+                                    node.children.splice.apply(node.children, [gstart, 0].concat(node.children.splice(gstart, glen).sort(sortBy)));
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            this._treeWalk(this._tree, nodecb, 0, sortCols.slice(0));
+        },
 
 
         /**
@@ -418,10 +487,6 @@
          */
         _reflowTable: function _reflowTable() {
             var _this2 = this;
-
-            // Since we have no idea how large this table might be, let's work outside the DOM...
-            //            let parent = this.element.parent();
-            //            let table = this.element.detach();
 
             if (!(this.options.forceTreeConstraints || this._treeColumn())) {
                 // There's no tree column, and no force in place, so the constraints don't matter
@@ -434,9 +499,6 @@
             });
 
             this._shiftErrorsToEnd();
-
-            // Replace in the DOM...
-            //            parent.element.append(table);
         },
 
 
@@ -501,7 +563,7 @@
                 //                     cause changes in the sizing of the node, which would FUBAR the
                 //                     calculations below.
                 // Add the connection line (hide it if show-lines false)...
-                if (self.options.showLines && node.parent && node.parent !== '/') {
+                if (!self.options.hideLines && node.parent && node.parent !== '/') {
                     var trueParent = false;
                     var closestParentedRow = node.$row.prevAll('tr[data-jtt-parent="' + node.parent + '"]').first();
                     if (closestParentedRow.length === 0) {
@@ -692,19 +754,23 @@
          * @param depth {int} the level of the node in the tree (0 = root node)
          * @private
          */
-        _treeWalk: function _treeWalk(node, cb) {
-            var depth = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
-
+        _treeWalk: function _treeWalk(node, cb, depth) {
             var continuation = true;
+            depth = +depth || 0;
+
+            for (var _len = arguments.length, data = Array(_len > 3 ? _len - 3 : 0), _key = 3; _key < _len; _key++) {
+                data[_key - 3] = arguments[_key];
+            }
+
             if (node.$row) {
-                continuation = cb(node, depth);
+                continuation = cb.apply(undefined, [node, depth].concat(data));
                 continuation = continuation !== undefined && typeof continuation === 'boolean' ? continuation : true;
             }
 
             if (continuation) {
                 var numChildren = node.children.length;
                 for (var i = 0; i < numChildren; i++) {
-                    this._treeWalk(node.children[i], cb, depth + 1);
+                    this._treeWalk.apply(this, [node.children[i], cb, depth + 1].concat(data));
                 }
             }
         },
