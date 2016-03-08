@@ -255,9 +255,9 @@
 
             this.options.indent = +this.element.attr(ATTR.indent) || this.options.indent;
 
-            this.options.insertOrder = this.element.attr(ATTR.insertOrder) !== undefined  ? true : this.options.insertOrder;
+            this.options.insertOrder = this.element.attr(ATTR.insertOrder) !== undefined ? true : this.options.insertOrder;
 
-            this.options.hideLines = this.element.attr(ATTR.hideLines) !== undefined  ? true : this.options.hideLines;
+            this.options.hideLines = this.element.attr(ATTR.hideLines) !== undefined ? true : this.options.hideLines;
 
             this.options.forceTreeConstraints = this.element.attr(ATTR.forceTreeConstraints) !== undefined ? true : this.options.forceTreeConstraints;
         },
@@ -293,10 +293,12 @@
                             }
                         }
                     }
+                    if (colset.sort !== undefined) self._sortColumns.push(colset);
                     coli += colw;
                 });
             });
             if (DEBUG) console.log("Current column settings: " + this._columnSettings);
+            if (DEBUG) console.log("Current column sort: " + this._sortColumns + "(" + this._sortColumns.length + ")");
         },
 
         /**
@@ -360,8 +362,10 @@
             self._tree = nodes[DEFAULT.ROOTPATH];
             delete nodes[DEFAULT.ROOTPATH];
 
+            let treeConstrained = (self.options.forceTreeConstraints || self._treeColumn() !== 0);
+
             for (let node in nodes) {
-                if (nodes[node].parent !== DEFAULT.ROOTPATH) {
+                if (treeConstrained && nodes[node].parent !== DEFAULT.ROOTPATH) {
                     nodes[nodes[node].parent].children.push(nodes[node]);
                 }
                 else {
@@ -407,7 +411,70 @@
         // Sort the table within set constraints
         _sort()
         {
+            let sortCols=this._sortColumns;
+            if (sortCols !== undefined && sortCols.length === 0) return;
 
+            let numSortCols = sortCols.length;
+            if (numSortCols === 0) return;
+
+            let simpleSort = (scol) => {
+                return (a, b) => {
+                    if (DEBUG) console.log(`Checking col(${scol.colIndex}): ${a.$row.find('td:nth-child(1)').text()} AGAINST ${b.$row.find('td:nth-child(1)').text()}`);
+                    let result = 0;
+                    let x = a.$row.find(`td:nth-child(${scol.colIndex})`).text();
+                    let y = b.$row.find(`td:nth-child(${scol.colIndex})`).text();
+                    if (scol.sortType === DEFAULT.VALIDSORTTYPE.NUM) {
+                        x = Number(x);
+                        y = Number(y);
+                    }
+                    if (scol.sortOrder === DEFAULT.VALIDSORTORDER.ASC) {
+                        result = (x < y) ? -1 : (x === y) ? 0 : 1;
+                    }
+                    else {
+                        result = (x > y) ? -1 : (x === y) ? 0 : 1;
+                    }
+                    return result;
+                };
+            };
+            let nodecb = (node, depth, sortCols) => {
+                let numChildren = node.children.length;
+                let sortCol = sortCols[0];
+                if (numChildren < 2 || sortCol === undefined) return;
+
+                let sortBy = (typeof sortCol.sortFn === 'function') ? sortCol.sortFn : simpleSort(sortCol);
+                // Sort this node's children
+                node.children.sort(sortBy);
+
+                let numSortCols = sortCols.length;
+                let prevSortColIndex = sortCol.colIndex;
+                for (let sortIndex = 1; sortIndex < numSortCols; sortIndex++)
+                {
+                    let gstart = 0;
+                    let dupFound = false;
+                    let inDup = false;
+                    for (let i = 1; i < numChildren; i++) {
+                        if (node.children[gstart].$row.find(`td:nth-child(${prevSortColIndex})`).text() ===
+                            node.children[i].$row.find(`td:nth-child(${prevSortColIndex})`).text()) {
+                            dupFound = true;
+                            inDup = true;
+                        }
+                        else if (inDup) {
+                            inDup = false;
+                            if (gstart != i) {
+                                let glen = i - gstart;
+                                if (glen >= 2) {
+                                    sortBy = (typeof sortCol.sortFn === 'function') ? sortCol.sortFn : simpleSort(sortCols[sortIndex]);
+                                    node.children.splice.apply(node.children, [gstart, 0].concat(node.children.splice(gstart, glen)
+                                        .sort(sortBy)));
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+
+            this._treeWalk(this._tree, nodecb, 0, sortCols.slice(0));
         },
 
         /**
@@ -507,17 +574,17 @@
                         .first();
                     if (closestParentedRow.length === 0) {
                         closestParentedRow = node.$row.prev(`tr[data-jtt-id="${node.parent}"]`);
-                        trueParent=true;
+                        trueParent = true;
                     }
 
                     let anchor = col.find('div.jtt-node-offset');
                     let parentConnector = (trueParent) ? closestParentedRow.find('.jtt-control') : closestParentedRow.find('div.jtt-connector');
-                    let controlOffset = (trueParent) ? parentConnector.width()/2 : 0;
+                    let controlOffset = (trueParent) ? parentConnector.width() / 2 : 0;
 
                     let parentConnectorBottom = parentConnector.offset().top + parentConnector.outerHeight(false);
                     let parentConnectorLeft = parentConnector.offset().left + controlOffset;
 
-                    let connectorHeight = Math.ceil(anchor.offset().top + (anchor.outerHeight()/2) - parentConnectorBottom);
+                    let connectorHeight = Math.ceil(anchor.offset().top + (anchor.outerHeight() / 2) - parentConnectorBottom);
 
                     let connectorWidth = anchor.offset().left - parentConnectorLeft - controlOffset;
 
@@ -690,17 +757,18 @@
          * @param depth {int} the level of the node in the tree (0 = root node)
          * @private
          */
-        _treeWalk(node, cb, depth = 0) {
+        _treeWalk(node, cb, depth, ...data) {
             let continuation = true;
+            depth = +depth || 0;
             if (node.$row) {
-                continuation = cb(node, depth);
+                continuation = cb(node, depth, ...data);
                 continuation = (continuation !== undefined && typeof continuation === 'boolean') ? continuation : true;
             }
 
             if (continuation) {
                 let numChildren = node.children.length;
                 for (let i = 0; i < numChildren; i++) {
-                    this._treeWalk(node.children[i], cb, depth + 1);
+                    this._treeWalk(node.children[i], cb, depth + 1, ...data);
                 }
             }
         },
